@@ -13,11 +13,7 @@ class Backuper:
     def __init__(self, target_path, destination_path, backup_name=None):
         self.target_path = Path(target_path)
         self.destination_path = Path(destination_path)
-
-        if not backup_name:
-            self.backup_name = self.target_path.name
-        else:
-            self.backup_name = backup_name
+        self.backup_name = backup_name or self.target_path.name
 
     @staticmethod
     def path_exists(path: Path) -> bool:
@@ -27,16 +23,19 @@ class Backuper:
     def set_backup_name(backup_name: str) -> str:
         return f"{backup_name}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
-    def do_backup(self):
+    def compress(self):
         logger.info("Creating archive...")
         backup_name = self.set_backup_name(self.backup_name)
         archive_path = self.destination_path / f"{backup_name}.tar.zst"
+        parent_path = self.target_path.parent
         str_command = [
             "tar",
             "--zstd",
+            "-C",
+            str(parent_path),
             "-cf",
             str(archive_path),
-            f"{self.target_path}"
+            f"{self.target_path.name}"
         ]
         result = subprocess.run(
             str_command,
@@ -46,11 +45,11 @@ class Backuper:
         )
 
         if result.returncode != 0:
-            raise Exception(result.stderr)
+            raise RuntimeError(result.stderr)
         else:
-            logger.info(result.stdout)
+            logger.info(f"Archive created: {archive_path}")
 
-    def start_backup(self):
+    def do_backup(self):
         logger.info("Starting backup service...")
 
         #Validate path
@@ -60,13 +59,13 @@ class Backuper:
         if not self.path_exists(self.destination_path):
             raise FileNotFoundError(f"Destination path not found for {self.destination_path}")
 
-        self.do_backup()
+        self.compress()
 
         logger.info(f"Backup for {self.target_path.name} success with no error found.")
 
 if __name__ == "__main__":
     try:
-        backuper = Backuper(target_path="/home/silence-suzuka/Project/File_Backuper", destination_path="/home/silence-suzuka/Project/")
-        backuper.start_backup()
+        backuper = Backuper(target_path="/home/silence-suzuka/Project/File_Backuper", destination_path="/home/silence-suzuka/backup_test", backup_name="My_Backup")
+        backuper.do_backup()
     except Exception as e:
         logger.error(e)
