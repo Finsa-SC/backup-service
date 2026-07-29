@@ -1,0 +1,9 @@
+[[backup]]
+target = "/home/silence-suzuka/Project/File_Backuper"
+destination = "/home/silence-suzuka/backup_test"
+#backup_name =
+
+[[backup]]
+target = "/home/silence-suzuka/Project/playground"
+destination = "/home/silence-suzuka/backup_test"
+backup_name = "My_Backuper_playground"

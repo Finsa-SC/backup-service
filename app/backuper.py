@@ -24,7 +24,7 @@ class Backuper:
         return f"{backup_name}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
     def compress(self):
-        logger.info("Creating archive...")
+        logger.info(f"Creating archive for {self.target_path.name}...")
         backup_name = self.set_backup_name(self.backup_name)
         archive_path = self.destination_path / f"{backup_name}.tar.zst"
         parent_path = self.target_path.parent
@@ -50,8 +50,6 @@ class Backuper:
             logger.info(f"Archive created: {archive_path}")
 
     def do_backup(self):
-        logger.info("Starting backup service...")
-
         #Validate path
         if not self.path_exists(self.target_path):
             raise FileNotFoundError(f"Target path not found for {self.target_path}")
