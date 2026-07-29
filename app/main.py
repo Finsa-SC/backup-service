@@ -1,6 +1,7 @@
 import tomllib, logging, sys, argparse
 from pathlib import Path
 from backuper import Backuper
+from config import Config
 
 # Set logging
 logging.basicConfig(
@@ -10,7 +11,6 @@ logging.basicConfig(
     level=logging.DEBUG,
 )
 logger = logging.getLogger(__name__)
-
 
 class BackupService:
     def __init__(self):
@@ -37,29 +37,27 @@ class BackupService:
 
     def load_config(self, args):
         config_path = Path(args.config)
-        try:
-            with open(config_path, "rb") as file:
-                self.config = tomllib.load(file)
-        except FileNotFoundError as er:
-            raise FileNotFoundError(f"Configuration file not found: {args.config}") from er
+        backup_config = Config(config_path)
+        self.config = backup_config.set_config()
 
     def run(self):
-        args = self.get_config()
-        self.load_config(args)
 
-        backup = self.config.get("backup")
-        target_backup = backup.get("target", None)
-        destination = backup.get("destination", None)
-        backup_name = backup.get("backup_name", None)
-
-        backuper = Backuper(target_path=target_backup, destination_path=destination, backup_name=backup_name)
+        backuper = Backuper(
+            target_path=self.config.target,
+            destination_path=self.config.destination,
+            backup_name=self.config.backup_name
+        )
         backuper.do_backup()
 
 if __name__ == "__main__":
     try:
         logger.info("Starting backup service...")
+
         backup_service = BackupService()
+        args =  backup_service.get_config()
+        backup_service.load_config(args)
         backup_service.run()
+
         logger.info("Target has been backup!")
     except Exception as e:
         logger.error(e)
