@@ -32,10 +32,10 @@ class BackupService:
             required=True,
             help="Path to Configuration target",
         )
+
         return parser.parse_args()
 
-    def load_config(self):
-        args = self.get_config()
+    def load_config(self, args):
         config_path = Path(args.config)
         try:
             with open(config_path, "rb") as file:
@@ -44,8 +44,9 @@ class BackupService:
             raise FileNotFoundError(f"Configuration file not found: {args.config}") from er
 
     def run(self):
-        self.get_config()
-        self.load_config()
+        args = self.get_config()
+        self.load_config(args)
+
         backup = self.config.get("backup")
         target_backup = backup.get("target", None)
         destination = backup.get("destination", None)
