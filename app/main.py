@@ -35,7 +35,6 @@ class BackupService:
         self.args = parser.parse_args()
 
     def load_config(self):
-        self.get_argument()
         config_path = Path(self.args.config)
         try:
             with open(config_path, "rb") as file:
@@ -44,6 +43,7 @@ class BackupService:
             raise FileNotFoundError(f"File {self.args.config} not found!")
 
     def run(self):
+        self.get_argument()
         self.load_config()
         BACKUP = self.config.get("backup")
         target_backup = BACKUP.get("target", None)
