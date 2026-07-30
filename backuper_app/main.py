@@ -1,4 +1,4 @@
-import tomllib, logging, sys, argparse
+import logging, sys, argparse
 from pathlib import Path
 from backuper import Backuper
 from config import Config
@@ -35,8 +35,8 @@ class BackupService:
 
         return parser.parse_args()
 
-    def load_config(self, args):
-        config_path = Path(args.config)
+    def load_config(self, argsv):
+        config_path = Path(argsv.config)
         backup_config = Config(config_path)
         self.config = backup_config.set_config()
 
@@ -49,7 +49,7 @@ class BackupService:
         )
         backuper.do_backup()
 
-if __name__ == "__main__":
+def main():
     try:
         logger.info("Starting backup service...")
 
@@ -61,3 +61,6 @@ if __name__ == "__main__":
         logger.info("Target has been backup!")
     except Exception as e:
         logger.error(e)
+
+if __name__ == "__main__":
+    main()
