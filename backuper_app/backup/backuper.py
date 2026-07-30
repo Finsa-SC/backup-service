@@ -11,10 +11,6 @@ class Backuper:
         self.backup_name = backup_name or self.target_path.name
 
     @staticmethod
-    def path_exists(path: Path) -> bool:
-        return path.exists()
-
-    @staticmethod
     def set_backup_name(backup_name: str) -> str:
         return f"{backup_name}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
@@ -47,11 +43,11 @@ class Backuper:
     def do_backup(self):
         #Validate path
         logger.debug(f"Validate path for {self.target_path}")
-        if not self.path_exists(self.target_path):
+        if not self.target_path.exists():
             raise FileNotFoundError(f"Target path not found for {self.target_path}")
 
         logger.debug(f"Validate path for {self.destination_path}")
-        if not self.path_exists(self.destination_path):
+        if not self.destination_path.exists():
             raise FileNotFoundError(f"Destination path not found for {self.destination_path}")
 
         self.compress()
