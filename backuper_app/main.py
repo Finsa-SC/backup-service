@@ -1,16 +1,10 @@
-import logging, sys, argparse
+import argparse
 from pathlib import Path
 from backuper_app.backup.backuper import Backuper
 from backuper_app.config.config import Config
+from backuper_app.utils import get_logger
 
-# Set logging
-logging.basicConfig(
-    format="[%(levelname)s] %(asctime)s: %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-    stream=sys.stdout,
-    level=logging.DEBUG,
-)
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class BackupService:
     def __init__(self):

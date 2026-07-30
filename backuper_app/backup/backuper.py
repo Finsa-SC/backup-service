@@ -1,13 +1,8 @@
-import logging, sys, subprocess, datetime
+import subprocess, datetime
 from pathlib import Path
+from backuper_app.utils import get_logger
 
-logging.basicConfig(
-    format="[%(levelname)s] %(asctime)s: %(message)s",
-    level=logging.DEBUG,
-    stream=sys.stdout,
-    datefmt="%Y-%m-%d %H:%M:%S"
-)
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class Backuper:
     def __init__(self, target_path, destination_path, backup_name=None):
@@ -51,9 +46,11 @@ class Backuper:
 
     def do_backup(self):
         #Validate path
+        logger.debug(f"Validate path for {self.target_path}")
         if not self.path_exists(self.target_path):
             raise FileNotFoundError(f"Target path not found for {self.target_path}")
 
+        logger.debug(f"Validate path for {self.destination_path}")
         if not self.path_exists(self.destination_path):
             raise FileNotFoundError(f"Destination path not found for {self.destination_path}")
 

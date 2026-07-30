@@ -1,6 +1,9 @@
 import tomllib
 from pathlib import Path
 from dataclasses import dataclass
+from backuper_app.utils import get_logger
+
+logger = get_logger(__name__)
 
 @dataclass
 class BackupConfig:
@@ -13,6 +16,7 @@ class Config:
         self._config_path: Path = config_path
 
     def _get_config(self):
+        logger.debug(f"Reading config from {self._config_path}")
         with self._config_path.open('rb') as file:
             return tomllib.load(file)
 
