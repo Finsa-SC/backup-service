@@ -1,7 +1,7 @@
 import logging, sys, argparse
 from pathlib import Path
-from backuper_app.backuper import Backuper
-from backuper_app.config import Config
+from backuper_app.backup.backuper import Backuper
+from backuper_app.config.config import Config
 
 # Set logging
 logging.basicConfig(

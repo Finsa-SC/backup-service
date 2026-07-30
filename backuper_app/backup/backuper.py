@@ -63,7 +63,7 @@ class Backuper:
 
 if __name__ == "__main__":
     try:
-        backuper = Backuper(target_path="/home/silence-suzuka/Project/File_Backuper", destination_path="/home/silence-suzuka/backup_test", backup_name="My_Backup")
+        backuper = Backuper(target_path="/", destination_path="/home/silence-suzuka/backup_test", backup_name="My_Backup")
         backuper.do_backup()
     except Exception as e:
         logger.error(e)
