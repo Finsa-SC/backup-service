@@ -8,7 +8,7 @@ class Backuper:
     def __init__(self, target_path, destination_path, backup_name=None):
         self.target_path = Path(target_path)
         self.destination_path = Path(destination_path)
-        self.backup_name = backup_name or self.target_path.name
+        self.backup_name = backup_name
 
     @staticmethod
     def set_backup_name(backup_name: str) -> str:

@@ -4,4 +4,4 @@ destination = "/home/silence-suzuka/backup_test"
 #backup_name = "My_Backup"
 
 [retention]
-#last_keep = 7
+keep_last = 7

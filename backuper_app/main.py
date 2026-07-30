@@ -1,15 +1,12 @@
 import argparse
 from pathlib import Path
-from backuper_app.backup.backuper import Backuper
-from backuper_app.config.config import Config
-from backuper_app.utils import get_logger
+from backup import Backuper, Retention
+from config import Config
+from utils import get_logger
 
 logger = get_logger(__name__)
 
 class BackupService:
-    def __init__(self):
-        self.config = None
-
     def __enter__(self):
         return self
 
@@ -29,27 +26,37 @@ class BackupService:
 
         return parser.parse_args()
 
-    def load_config(self, argsv):
+    @staticmethod
+    def load_config(argsv):
         config_path = Path(argsv.config)
         backup_config = Config(config_path)
-        self.config = backup_config.set_config()
+        return backup_config.set_config()
 
-    def run(self):
+    def run(self, config):
         backuper = Backuper(
-            target_path=self.config.target,
-            destination_path=self.config.destination,
-            backup_name=self.config.backup_name
+            target_path=config.target,
+            destination_path=config.destination,
+            backup_name=config.backup_name
         )
+
         backuper.do_backup()
+
+        if config.keep_last:
+            backup_retention = Retention(
+                destination=config.destination,
+                backup_name=config.backup_name,
+                keep_last=config.keep_last
+            )
+            backup_retention.do_retention()
 
 def main():
     try:
+        backup_service = BackupService()
         logger.info("Starting backup service...")
 
-        backup_service = BackupService()
         args =  backup_service.get_config()
-        backup_service.load_config(args)
-        backup_service.run()
+        config = backup_service.load_config(args)
+        backup_service.run(config)
 
         logger.info("Target has been backup!")
     except Exception as e:
