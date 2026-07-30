@@ -42,14 +42,15 @@ Thumbs.db
 # Kalau kamu simpan hasil scan/recon, jangan sampai ikut ke-push!
 *.dumpcap
 *.pcap
-*.log
 *.txt
 results/
 scans/
 wordlists/
 
-# --- Proyekmu (FinSky) ---
+# --- Project ---
 # Tambahkan folder hasil build atau output spesifikmu di sini
 dist/
 build/
 *.egg-info/
+systemd/
+test/

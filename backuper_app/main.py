@@ -41,7 +41,6 @@ class BackupService:
         self.config = backup_config.set_config()
 
     def run(self):
-
         backuper = Backuper(
             target_path=self.config.target,
             destination_path=self.config.destination,
