@@ -36,7 +36,8 @@ class BackupService:
         backuper = Backuper(
             target_path=config.target,
             destination_path=config.destination,
-            backup_name=config.backup_name
+            backup_name=config.backup_name,
+            compression_type=config.compression,
         )
 
         backuper.do_backup()
