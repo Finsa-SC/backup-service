@@ -19,17 +19,18 @@ class Retention:
     def should_delete_backup(self, backups: list[Path]) -> bool:
         return len(backups) > self._keep_last
 
-    @staticmethod
-    def remove_oldest(oldest_backup: Path):
-        oldest_backup.unlink()
+    def get_should_delete(self, oldest_backups: list[Path]):
+        violating_policy = []
+        while self.should_delete_backup(oldest_backups):
+            violating_policy.append(oldest_backups.pop(0))
+
+        return violating_policy
 
     def do_retention(self):
         backups = self.get_backup_glob()
-        while self.should_delete_backup(backups):
-            oldest_backup = backups[0]
-            backups.pop(0)
-            self.remove_oldest(oldest_backup)
-            logger.info(f"{oldest_backup.name} has been removed from {self._destination.name}")
+
+        self.get_should_delete(backups)
+
 
 if __name__ == "__main__":
     retention = Retention(Path("/home/silence-suzuka/backup_test"), "playground", 7)
