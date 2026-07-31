@@ -1,7 +1,7 @@
 from pathlib import Path
 from utils import get_logger
 import subprocess
-from .compression import COMPRESSION
+from backuper_app.backup.compression import resolve_compression_from_suffix
 
 logger = get_logger(__name__)
 
@@ -28,18 +28,26 @@ class Restore:
 
         return None
 
-    def _make_extarct_dir(self) -> None:
-        self.extract_path.mkdir(mode=0o700, parents=True, exist_ok=True)
+    def _make_extract_dir(self) -> None:
+        self.extract_path.mkdir(
+            mode=0o700,
+            parents=True,
+            exist_ok=True
+        )
 
-    def _resolve_archive_compress_type(self, archive_path: Path):
-
-
-    def _extract_archive(self, archive_path: Path):
+    def _extract_archive(self, archive_file: Path):
+        compression = resolve_compression_from_suffix(archive_file)
         extract_command = [
             "tar",
-            ""
+            compression.extract_flag,
+            "-C",
+            str(self.extract_path)
         ]
-        subprocess.run()
+        subprocess.run(
+            extract_command,
+            text=True,
+            check=True,
+        )
 
     def do_restore(self):
         if self.is_file:
@@ -52,7 +60,7 @@ class Restore:
                 logger.info(f"No archive found for {self.user_input}")
                 exit(0)
 
-            self._make_extarct_dir()
+            self._make_extract_dir()
         logger.debug(archive_file)
 
 
