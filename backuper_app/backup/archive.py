@@ -27,6 +27,16 @@ class Archive:
 
         return year_directory
 
+    @staticmethod
+    def _set_month_directory(self, year_dir_path) -> Path:
+        current_month = datetime.now().strftime("%b")
+        month_directory = year_dir_path / Path(current_month)
+
+        if not month_directory.exists():
+            month_directory.mkdir(mode=0o700)
+
+        return month_directory
+
     def do_archive(self):
         for old in self._expired_backups:
             if self.archive_enabled:
