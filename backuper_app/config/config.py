@@ -12,6 +12,8 @@ class BackupConfig:
     backup_name: str | None
     keep_last: int
     compression: str
+    archive: bool
+    archive_path: Path
 
 class Config:
     def __init__(self, config_path: Path):
@@ -33,6 +35,7 @@ class Config:
         config = self._get_config()
         backup = config["backup"]
         retention = config["retention"]
+        archive = config["archive"]
 
         target_backup = Path(backup["target"])
         backup_name = self._set_backup_name(backup.get("backup_name", None), target_backup)
@@ -42,5 +45,7 @@ class Config:
             destination=Path(backup["destination"]),
             backup_name=backup_name,
             keep_last=retention.get("keep_last", None),
-            compression=backup.get("compression", None)
+            compression=backup.get("compression", None),
+            archive=archive.get("enabled", False),
+            archive_path=Path(archive.get("path", None)),
         )
