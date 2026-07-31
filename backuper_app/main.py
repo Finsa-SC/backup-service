@@ -32,7 +32,7 @@ class BackupService:
         backup_config = Config(config_path)
         return backup_config.set_config()
 
-    def run(self, config):
+    def run_backup(self, config):
         backuper = Backuper(
             target_path=config.target,
             destination_path=config.destination,
@@ -64,7 +64,7 @@ def main():
 
         args =  backup_service.get_config()
         config = backup_service.load_config(args)
-        backup_service.run(config)
+        backup_service.run_backup(config)
 
         logger.info("Target has been backup!")
     except Exception as e:

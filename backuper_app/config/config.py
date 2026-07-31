@@ -1,6 +1,7 @@
 import tomllib
 from pathlib import Path
 from dataclasses import dataclass
+from enum import Enum, auto
 from backuper_app.utils import get_logger
 
 logger = get_logger(__name__)
@@ -14,10 +15,16 @@ class BackupConfig:
     compression: str
     archive_enable: bool
     archive_path: Path
+    service_mode: ServiceMode
+
+class ServiceMode(Enum):
+    Backup = auto()
+    Restore = auto()
 
 class Config:
-    def __init__(self, config_path: Path):
+    def __init__(self, config_path: Path, service_mode: ServiceMode):
         self._config_path: Path = config_path
+        self.service_mode = service_mode
 
     def _get_config(self):
         logger.debug(f"Reading config from {self._config_path}")
@@ -48,4 +55,5 @@ class Config:
             compression=backup.get("compression", None),
             archive_enable=archive.get("enabled", False),
             archive_path=Path(archive.get("path", None)),
+            service_mode=self.service_mode,
         )
