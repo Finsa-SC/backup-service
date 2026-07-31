@@ -1,5 +1,6 @@
 from pathlib import Path
 from backuper_app.utils import get_logger
+from datetime import datetime
 
 logger = get_logger(__name__)
 
@@ -16,6 +17,16 @@ class Archive:
     def _delete_from_backup(old_backup: Path):
         old_backup.unlink()
 
+    def _set_year_directory(self) -> Path:
+        current_year = datetime.now().strftime("%Y")
+        year_directory = self._archive_path / Path(current_year)
+
+        #Search existing years in archive
+        if not year_directory.exists():
+            year_directory.mkdir(mode=0o700)
+
+        return year_directory
+
     def do_archive(self):
         for old in self._expired_backups:
             if self.archive_enabled:
@@ -26,4 +37,3 @@ class Archive:
                 logger.debug(f"Deleting {old.name} from {self._archive_path}")
                 self._delete_from_backup(old)
                 logger.info(f"{old.name} has beed removed")
-
