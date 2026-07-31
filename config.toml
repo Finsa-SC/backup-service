@@ -8,5 +8,5 @@ compression = "zstd"
 keep_last = 7
 
 [archive]
-enabled = true
+#enabled = true
 path = "/home/silence-suzuka/backup_archive"

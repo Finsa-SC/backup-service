@@ -12,7 +12,7 @@ class BackupConfig:
     backup_name: str | None
     keep_last: int
     compression: str
-    archive: bool
+    archive_enable: bool
     archive_path: Path
 
 class Config:
@@ -46,6 +46,6 @@ class Config:
             backup_name=backup_name,
             keep_last=retention.get("keep_last", None),
             compression=backup.get("compression", None),
-            archive=archive.get("enabled", False),
+            archive_enable=archive.get("enabled", False),
             archive_path=Path(archive.get("path", None)),
         )

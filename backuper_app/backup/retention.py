@@ -28,8 +28,9 @@ class Retention:
 
     def do_retention(self):
         backups = self.get_backup_glob()
+        should_delete = self.get_should_delete(backups)
 
-        self.get_should_delete(backups)
+        return should_delete
 
 
 if __name__ == "__main__":

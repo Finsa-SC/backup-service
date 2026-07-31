@@ -1,6 +1,6 @@
 import argparse
 from pathlib import Path
-from backup import Backuper, Retention
+from backup import Backuper, Retention, Archive
 from config import Config
 from utils import get_logger
 
@@ -48,7 +48,14 @@ class BackupService:
                 backup_name=config.backup_name,
                 keep_last=config.keep_last
             )
-            backup_retention.do_retention()
+            should_delete = backup_retention.do_retention()
+
+            backup_archive = Archive(
+                oldest_backup=should_delete,
+                archive_path=config.archive_path,
+                archive_enable=config.archive_enable,
+            )
+            backup_archive.do_archive()
 
 def main():
     try:
