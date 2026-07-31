@@ -29,7 +29,7 @@ class Backuper:
         return f"{backup_name}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
     def compress(self):
-        logger.info(f"Creating archive for {self.target_path.name}...")
+        logger.info(f"Creating backup for {self.target_path.name}...")
         backup_name = self.set_backup_name(self.backup_name)
 
         compression_type = self.TAR_FLAGS[self.compression_type]

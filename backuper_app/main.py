@@ -51,9 +51,9 @@ class BackupService:
             should_delete = backup_retention.do_retention()
 
             backup_archive = Archive(
-                oldest_backup=should_delete,
+                expired_backups=should_delete,
                 archive_path=config.archive_path,
-                archive_enable=config.archive_enable,
+                archive_enabled=config.archive_enable,
             )
             backup_archive.do_archive()
 

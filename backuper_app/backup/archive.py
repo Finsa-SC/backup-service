@@ -10,8 +10,9 @@ class Archive:
         self._expired_backups = expired_backups
         self.archive_enabled = archive_enabled
 
-    def _move_into_archive(self, old_backup: Path):
-        old_backup.move_into(self._archive_path)
+    @staticmethod
+    def _move_into_archive(old_backup: Path, archive_target: Path):
+        old_backup.move_into(archive_target)
 
     @staticmethod
     def _delete_from_backup(old_backup: Path):
@@ -19,31 +20,35 @@ class Archive:
 
     def _set_year_directory(self) -> Path:
         current_year = datetime.now().strftime("%Y")
-        year_directory = self._archive_path / Path(current_year)
+        year_directory = self._archive_path / current_year
 
         #Search existing years in archive
         if not year_directory.exists():
-            year_directory.mkdir(mode=0o700)
+            logger.debug(f"No archive for {current_year}, Creating one...")
+            year_directory.mkdir(mode=0o700, parents=True, exist_ok=True)
 
         return year_directory
 
     @staticmethod
-    def _set_month_directory(self, year_dir_path) -> Path:
+    def _set_month_directory(year_dir_path) -> Path:
         current_month = datetime.now().strftime("%b")
-        month_directory = year_dir_path / Path(current_month)
+        month_directory = year_dir_path / current_month
 
         if not month_directory.exists():
-            month_directory.mkdir(mode=0o700)
+            logger.debug(f"{current_month} archive directory not found, Creating one...")
+            month_directory.mkdir(mode=0o700, parents=True, exist_ok=True)
 
         return month_directory
 
     def do_archive(self):
+        archive_target = self._set_month_directory(self._set_year_directory())
+
         for old in self._expired_backups:
             if self.archive_enabled:
                 logger.debug(f"Moving {old.name} into {self._archive_path}...")
-                self._move_into_archive(old)
+                self._move_into_archive(old_backup=old, archive_target=archive_target)
                 logger.info(f"{old.name} has been moved to {self._archive_path.name}")
             else:
                 logger.debug(f"Deleting {old.name} from {self._archive_path}")
-                self._delete_from_backup(old)
+                self._delete_from_backup(old_backup=old)
                 logger.info(f"{old.name} has beed removed")
