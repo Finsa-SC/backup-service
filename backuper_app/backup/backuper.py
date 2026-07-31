@@ -1,23 +1,11 @@
 import subprocess, datetime
 from pathlib import Path
 from backuper_app.utils import get_logger
+from .compression import resolve_compression_from_config
 
 logger = get_logger(__name__)
 
 class Backuper:
-    TAR_FLAGS: dict = {
-        "zstd":
-        {
-            "flag": "--zstd",
-            "extention": "zst",
-        },
-        "gzip":
-        {
-            "flag": "-z",
-            "extention": "gz",
-        },
-    }
-
     def __init__(self, target_path, destination_path, backup_name=None, compression_type: str = "zstd"):
         self.target_path = Path(target_path)
         self.destination_path = Path(destination_path)
@@ -32,16 +20,14 @@ class Backuper:
         logger.info(f"Creating backup for {self.target_path.name}...")
         backup_name = self.set_backup_name(self.backup_name)
 
-        compression_type = self.TAR_FLAGS[self.compression_type]
-        compression = compression_type["flag"]
-        extention = compression_type["extention"]
+        compression = resolve_compression_from_config(self.compression_type)
 
-        backup_path = self.destination_path / f"{backup_name}.tar.{extention}"
+        backup_path = self.destination_path / f"{backup_name}.tar.{compression.suffix}"
         parent_path = self.target_path.parent
 
         str_command = [
             "tar",
-            compression,
+            compression.compress_flag,
             "-C",
             str(parent_path),
             "-cf",
