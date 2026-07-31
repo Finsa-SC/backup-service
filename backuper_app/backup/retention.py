@@ -25,8 +25,9 @@ class Retention:
 
     def do_retention(self):
         backups = self.get_backup_glob()
-        if self.should_delete_backup(backups):
+        while self.should_delete_backup(backups):
             oldest_backup = backups[0]
+            backups.pop(0)
             self.remove_oldest(oldest_backup)
             logger.info(f"{oldest_backup.name} has been removed from {self._destination.name}")
 
