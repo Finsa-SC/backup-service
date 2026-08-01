@@ -1,8 +1,9 @@
 import argparse
 from pathlib import Path
-from backup import Backuper, Retention, Archive
-from config import Config
-from utils import get_logger
+from backuper_app.backup import Backuper, Retention, Archive
+from backuper_app.backup.restore import Restore
+from backuper_app.config import Config
+from backuper_app.utils import get_logger
 
 logger = get_logger(__name__)
 
@@ -30,6 +31,7 @@ class BackupService:
         #Backup Mode
         backup_mode = subparser.add_parser(
             name="backup",
+            help="Create new backup",
             description="Create new backup",
         )
 
@@ -42,13 +44,22 @@ class BackupService:
         #Restore Mode
         restore_mode = subparser.add_parser(
             name="restore",
+            help="Extract archive backup",
             description="Extract archive backup",
         )
 
         restore_mode.add_argument(
-            "--extract",
-            required=True,
-            help="Archive file path you want to extract or date format to find latest archive on a day(require --archive)",
+            "--file",
+            type=Path,
+            default=None,
+            help="File path you want to restore",
+        )
+
+        restore_mode.add_argument(
+            "--date",
+            type=str,
+            default=None,
+            help="Date archive you want to restore(require --archive-path)",
         )
 
         restore_mode.add_argument(
@@ -59,7 +70,7 @@ class BackupService:
         )
 
         restore_mode.add_argument(
-            "--archive",
+            "--archive-path",
             help="Path to your archive directory to find file to be extract"
         )
 
@@ -97,16 +108,46 @@ class BackupService:
             )
             backup_archive.do_archive()
 
+    @staticmethod
+    def run_restore(**kwargs):
+        restore = Restore(
+            file_path=kwargs['file_path'],
+            date=kwargs['date'],
+            extract_path=kwargs['extract_path'],
+            archive_path=kwargs["archive_path"],
+        )
+        restore.do_restore()
+
 def main():
     try:
         backup_service = BackupService()
-        logger.info("Starting backup service...")
 
         args =  backup_service.get_config()
-        config = backup_service.load_config(args)
-        backup_service.run_backup(config)
 
-        logger.info("Target has been backup!")
+        match args.command:
+            case "backup":
+                logger.info("Starting backup service...")
+
+                config = backup_service.load_config(args)
+                backup_service.run_backup(config)
+
+                logger.info("Target has been backup!")
+            case "restore":
+                if args.file and args.date:
+                    raise ValueError("Unexpected argument, choose one format(file/date)")
+
+                if args.date and not args.archive_path:
+                    raise ValueError("Missing --archive-path flag to use --date")
+
+                logger.info(f"Restoring {args.file or args.date}...")
+                backup_service.run_restore(
+                    file_path=args.file,
+                    date=args.date,
+                    extract_path=args.destination,
+                    archive_path=args.archive_path,
+                )
+                logger.info("Restore completed.")
+
     except Exception as e:
         logger.error(e)
 

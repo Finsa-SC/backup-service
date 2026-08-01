@@ -58,7 +58,7 @@ class Backuper:
 
         self.compress()
 
-        logger.info(f"Backup for {self.target_path.name} success with no error found.")
+        logger.debug(f"Backup for {self.target_path.name} success with no error found.")
 
 if __name__ == "__main__":
     try:

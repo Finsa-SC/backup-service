@@ -11,6 +11,7 @@ def resolve_compression_from_config(commpression_type: str):
     return COMPRESSION[commpression_type]
 
 def _get_compression_type(suffix: str) -> str:
+    suffix = suffix.replace(".", "")
     match suffix:
         case "zst":
             return "zstd"
