@@ -29,10 +29,11 @@ class BackupService:
     @staticmethod
     def load_config(argsv):
         config_path = Path(argsv.config)
-        backup_config = Config(config_path)
+        backup_config = Config(config_path, )
         return backup_config.set_config()
 
-    def run_backup(self, config):
+    @staticmethod
+    def run_backup(config):
         backuper = Backuper(
             target_path=config.target,
             destination_path=config.destination,
