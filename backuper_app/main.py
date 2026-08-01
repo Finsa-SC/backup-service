@@ -17,11 +17,50 @@ class BackupService:
 
     @staticmethod
     def get_config():
-        parser = argparse.ArgumentParser(description="Backup Service")
-        parser.add_argument(
+        parser = argparse.ArgumentParser(
+            prog="backuper",
+            description="Backup Service",
+        )
+
+        subparser = parser.add_subparsers(
+            dest="command",
+            required=True,
+        )
+
+        #Backup Mode
+        backup_mode = subparser.add_parser(
+            name="backup",
+            description="Create new backup",
+        )
+
+        backup_mode.add_argument(
             "--config",
             required=True,
             help="Path to Configuration target",
+        )
+
+        #Restore Mode
+        restore_mode = subparser.add_parser(
+            name="restore",
+            description="Extract archive backup",
+        )
+
+        restore_mode.add_argument(
+            "--extract",
+            required=True,
+            help="Archive file path you want to extract or date format to find latest archive on a day(require --archive)",
+        )
+
+        restore_mode.add_argument(
+            "--destination",
+            type=Path,
+            default=Path("/tmp/backup_restore"),
+            help="Path to extract directory destination you want, default is /tmp/backup_restore"
+        )
+
+        restore_mode.add_argument(
+            "--archive",
+            help="Path to your archive directory to find file to be extract"
         )
 
         return parser.parse_args()
