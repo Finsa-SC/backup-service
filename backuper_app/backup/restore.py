@@ -1,5 +1,5 @@
 from pathlib import Path
-from backuper_app.utils import get_logger
+from backuper_app.utils import get_logger, get_archive_by_path, get_archive_by_date
 import subprocess
 from backuper_app.backup.compression import resolve_compression_from_suffix
 
@@ -11,22 +11,6 @@ class Restore:
         self.date = date
         self.extract_path = extract_path
         self.archive_path = Path(archive_path) if archive_path else None
-
-    def _get_archive_by_date(self) -> list[Path]:
-        date = self.date.replace("-", "")
-        found_archive = list(
-            self.archive_path.rglob(f"*{date}*")
-        )
-        found_archive.sort(key=lambda arch_name: arch_name.name, reverse=True)
-
-        return found_archive
-
-    def _get_archive_by_name(self) -> Path | None:
-        archive_file = Path(self.file_path)
-        if archive_file.exists():
-            return archive_file
-
-        return None
 
     def _make_extract_dir(self) -> None:
         self.extract_path.mkdir(
@@ -53,9 +37,9 @@ class Restore:
 
     def do_restore(self):
         if self.file_path:
-            archive_file = self._get_archive_by_name()
+            archive_file = get_archive_by_path(self.file_path)
         else:
-            archive_stack = self._get_archive_by_date()
+            archive_stack = get_archive_by_date(self.archive_path, self.date)
             if archive_stack:
                 archive_file = archive_stack[0]
             else:
