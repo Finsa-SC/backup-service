@@ -33,12 +33,17 @@ class Backuper:
             str(backup_path),
             f"{self.target_path.name}"
         ]
-        subprocess.run(
+        result = subprocess.run(
             str_command,
-            check=True,
+            capture_output=True,
+            text=True,
         )
 
-        return backup_path
+        if result.returncode != 0:
+            backup_path.unlink(missing_ok=True)
+            raise ChildProcessError(result.stderr)
+        else:
+            return backup_path
 
     def do_backup(self) -> Path:
         #Validate path

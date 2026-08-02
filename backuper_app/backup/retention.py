@@ -9,6 +9,7 @@ class Retention:
         self._backup_name = backup_name
         self._keep_last = keep_last
 
+    #Get list of path with name match
     def get_backup_glob(self) -> list[Path]:
         path_list = list(
             self._destination.glob(f"{self._backup_name}*")
