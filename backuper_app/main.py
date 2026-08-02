@@ -91,7 +91,7 @@ class BackupService:
             compression_type=config.compression,
         )
 
-        backuper.do_backup()
+        backup_path = backuper.do_backup()
 
         if config.keep_last:
             backup_retention = Retention(
