@@ -16,7 +16,7 @@ class Backuper:
     def set_backup_name(backup_name: str) -> str:
         return f"{backup_name}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
-    def compress(self):
+    def compress(self) -> Path:
         logger.info(f"Creating backup for {self.target_path.name}...")
         backup_name = self.set_backup_name(self.backup_name)
 
@@ -34,19 +34,14 @@ class Backuper:
             str(backup_path),
             f"{self.target_path.name}"
         ]
-        result = subprocess.run(
+        subprocess.run(
             str_command,
-            shell=False,
-            capture_output=True,
-            text=True,
+            check=True,
         )
 
-        if result.returncode != 0:
-            raise RuntimeError(result.stderr)
-        else:
-            logger.info(f"Backup created: {backup_path}")
+        return backup_path
 
-    def do_backup(self):
+    def do_backup(self) -> Path:
         #Validate path
         logger.debug(f"Validate path for {self.target_path}")
         if not self.target_path.exists():
@@ -56,9 +51,11 @@ class Backuper:
         if not self.destination_path.exists():
             raise FileNotFoundError(f"Destination path not found for {self.destination_path}")
 
-        self.compress()
+        backup_path = self.compress()
 
         logger.debug(f"Backup for {self.target_path.name} success with no error found.")
+
+        return backup_path
 
 if __name__ == "__main__":
     try:
