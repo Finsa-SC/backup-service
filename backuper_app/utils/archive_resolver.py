@@ -1,0 +1,30 @@
+from pathlib import Path
+from datetime import datetime
+
+def is_valid_date(date: str):
+    try:
+        datetime.strptime(date,"%Y-%m-%d")
+        return True
+    except ValueError:
+        return False
+
+def get_archive_by_date(archive_path: Path, date: str) -> list[Path]:
+    if not is_valid_date(date):
+        raise ValueError(f"Invalid date value: got {date}")
+
+    date = date.replace('-', '')
+    match_date = list(
+        archive_path.rglob(f"*_{date}_*")
+    )
+    match_date.sort(key=lambda path: path.name)
+
+    return match_date
+
+def get_archive_by_path(archive_path: Path):
+    if archive_path.is_file(follow_symlinks=True):
+        return archive_path
+    else:
+        raise FileNotFoundError(f"{archive_path} is doesn't exist or not a file")
+
+if __name__ == "__main__":
+    print(get_archive_by_date(Path("/home/silence-suzuka/backup_archive"), "2026-07-31"))
