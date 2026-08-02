@@ -118,13 +118,19 @@ class BackupService:
 
     @staticmethod
     def run_restore(**kwargs):
-        restore = Restore(
-            file_path=kwargs['file_path'],
-            date=kwargs['date'],
-            extract_path=kwargs['extract_path'],
-            archive_path=kwargs["archive_path"],
-        )
-        restore.do_restore()
+        from backuper_app.utils.checksum import is_valid_checksum
+
+        file_path = Path(kwargs['file_path'])
+        checksum_path = file_path.with_name(file_path.name + ".sha256")
+
+        if is_valid_checksum(file_path, checksum_path):
+            restore = Restore(
+                file_path=file_path,
+                date=kwargs['date'],
+                extract_path=kwargs['extract_path'],
+                archive_path=kwargs["archive_path"],
+            )
+            restore.do_restore()
 
 def main():
     try:

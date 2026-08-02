@@ -31,10 +31,13 @@ def make_hash(file_path: Path):
     else:
         raise FileNotFoundError(f"{file_path} not exist or it's not a file")
 
-def is_valid_checksum(file_path: Path, checksum_path: Path):
-    hashed_file = get_hash(file_path)
-    hashed_checksum = get_hash(checksum_path)
-    return hashed_file == hashed_checksum
+def is_valid_checksum(file_path: Path, checksum_path: Path) -> bool:
+    expected = get_hash(checksum_path)
+    actual = get_hash(file_path)
+    if expected == actual:
+        return True
+    else:
+        raise ValueError(f"Checksum mismatch for {file_path.name}: expected {expected}, got {actual}")
 
 if __name__ == "__main__":
     make_hash(Path("/home/silence-suzuka/backup_test/playground_20260731_182432.tar.zst"))
