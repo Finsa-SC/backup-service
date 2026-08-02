@@ -11,7 +11,7 @@ def make_file_checksum(path_file: Path, hashed_file: str) -> Path:
 
     return checksum_path
 
-def get_hash(file_path) -> str:
+def calculate_hash(file_path) -> str:
     with file_path.open('rb') as file:
         sha = hashlib.sha256()
         while True:
@@ -23,17 +23,21 @@ def get_hash(file_path) -> str:
                 break
         return sha.hexdigest()
 
+def read_hash_from_checksum(checksum_path: Path):
+    with checksum_path.open('r') as file:
+        return file.read()
+
 def make_hash(file_path: Path):
     if file_path.is_file():
-            hashed_file = get_hash(file_path)
+            hashed_file = calculate_hash(file_path)
 
             return make_file_checksum(file_path, hashed_file)
     else:
         raise FileNotFoundError(f"{file_path} not exist or it's not a file")
 
 def is_valid_checksum(file_path: Path, checksum_path: Path) -> bool:
-    expected = get_hash(checksum_path)
-    actual = get_hash(file_path)
+    expected = read_hash_from_checksum(checksum_path)
+    actual = calculate_hash(file_path)
     if expected == actual:
         return True
     else:
