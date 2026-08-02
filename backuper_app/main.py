@@ -84,6 +84,8 @@ class BackupService:
 
     @staticmethod
     def run_backup(config):
+        from backuper_app.utils.checksum import make_hash
+
         backuper = Backuper(
             target_path=config.target,
             destination_path=config.destination,
@@ -91,8 +93,14 @@ class BackupService:
             compression_type=config.compression,
         )
 
+        logger.info(f"Creating backup for {config.target.name}...")
         backup_path = backuper.do_backup()
+        logger.info(f"Backup has been created: {config.target.name} -> {backup_path}")
 
+        checksum_path = make_hash(backup_path)
+        logger.info(f"Checksum file has been created for {backup_path.name} as {checksum_path.name}")
+
+        #Check retention if enable
         if config.keep_last:
             backup_retention = Retention(
                 destination=config.destination,
