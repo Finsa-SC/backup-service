@@ -1,8 +1,9 @@
 from pathlib import Path
-from backuper_app.utils import get_archive_by_date, get_archive_by_path, validate_checksum
+from backuper_app.utils import get_archive_by_date, get_archive_by_path, validate_checksum, is_checksum_file
+
 
 class Verify:
-    def __init__(self, file_path: Path = None, archive_path: Path = None, date: str = None):
+    def __init__(self, file_path: Path | None = None, archive_path: Path | None = None, date: str | None = None):
         self.file_path = file_path
         self.archive_path = archive_path
         self.date = date
@@ -13,7 +14,7 @@ class Verify:
         elif self.date and self.archive_path:
             #Find path that not hash file
             match_archives = get_archive_by_date(self.archive_path, date=self.date)
-            backup_files = [file for file in match_archives if not str(file).endswith(".sha256")]
+            backup_files = [file for file in match_archives if is_checksum_file(file)]
             archive_file = backup_files[-1]
         else:
             raise ValueError("Missing argument for Verify command")

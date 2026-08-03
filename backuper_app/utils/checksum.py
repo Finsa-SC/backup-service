@@ -36,6 +36,9 @@ def make_hash(file_path: Path):
     else:
         raise FileNotFoundError(f"{file_path} not exist or it's not a file")
 
+def is_checksum_file(path: Path) -> bool:
+    return ".sha256" in path.suffixes
+
 #Return bool, expected and actual hash
 def validate_checksum(file_path: Path) -> None:
     #Resolve checksum path for file

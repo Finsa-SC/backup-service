@@ -6,7 +6,7 @@ from backuper_app.backup.compression import resolve_compression_from_suffix
 logger = get_logger(__name__)
 
 class Restore:
-    def __init__(self, file_path: Path = None, date: str = None , extract_path: Path = Path("/tmp/backup_restore"), archive_path: Path = None):
+    def __init__(self, file_path: Path | None = None, date: str | None = None , extract_path: Path = Path("/tmp/backup_restore"), archive_path: Path | None = None):
         self.file_path = file_path
         self.date = date
         self.extract_path = extract_path

@@ -145,7 +145,7 @@ class BackupService:
     def run_restore(**kwargs):
         from backuper_app.utils.checksum import validate_checksum
 
-        file_path = Path(kwargs['file_path'])
+        file_path = kwargs['file_path']
 
         validate_checksum(file_path)
 
@@ -157,11 +157,11 @@ class BackupService:
         )
         restore.do_restore()
 
-def _valid_input_archive(args):
-    if args.file and args.date:
+def _valid_input_archive(file: Path, date: str, archive_path: Path):
+    if file and date:
         raise ValueError("Unexpected argument, choose one format(file/date)")
 
-    if args.date and not args.archive_path:
+    if date and not archive_path:
         raise ValueError("Missing --archive-path flag to use --date")
 
     return True

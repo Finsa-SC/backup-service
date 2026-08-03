@@ -14,6 +14,7 @@ class Retention:
 
     def get_should_delete(self, oldest_backups: list[Path]):
         expired_backups = []
+        oldest_backups = [backup for backup in oldest_backups if backup.suffix != ".sha256"]
         while self.should_delete_backup(oldest_backups):
             oldest_backup = oldest_backups.pop(0)
             expired_backups.append(oldest_backup)
