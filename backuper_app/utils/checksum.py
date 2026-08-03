@@ -35,15 +35,14 @@ def make_hash(file_path: Path):
     else:
         raise FileNotFoundError(f"{file_path} not exist or it's not a file")
 
-def is_valid_checksum(file_path: Path) -> bool:
+#Return bool, expected and actual hash
+def validate_checksum(file_path: Path) -> None:
     #Resolve checksum path for file
     checksum_path = file_path.with_name(file_path.name + ".sha256")
 
     expected = read_hash_from_checksum(checksum_path)
     actual = calculate_hash(file_path)
-    if expected == actual:
-        return True
-    else:
+    if expected != actual:
         raise ValueError(f"Checksum mismatch for {file_path.name}: expected {expected}, got {actual}")
 
 if __name__ == "__main__":

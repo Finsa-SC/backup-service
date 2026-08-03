@@ -1,6 +1,6 @@
 import argparse
 from pathlib import Path
-from backuper_app.backup import Backuper, Retention, Archive
+from backuper_app.backup import Backuper, Retention, Archive, Verify
 from backuper_app.backup.restore import Restore
 from backuper_app.config import Config
 from backuper_app.utils import get_logger
@@ -61,17 +61,37 @@ class BackupService:
             default=None,
             help="Date archive you want to restore(require --archive-path)",
         )
-
         restore_mode.add_argument(
             "--destination",
             type=Path,
             default=Path("/tmp/backup_restore"),
             help="Path to extract directory destination you want, default is /tmp/backup_restore"
         )
-
         restore_mode.add_argument(
             "--archive-path",
             help="Path to your archive directory to find file to be extract"
+        )
+
+        verify_mode = subparser.add_parser(
+            name="verify",
+            help="verify backup data with checksum",
+            description="verify backup data with checksum",
+        )
+        verify_mode.add_argument(
+            "--file",
+            type=Path,
+            default=None,
+            help="File path you want to verify",
+        )
+        verify_mode.add_argument(
+            "--date",
+            type=str,
+            default=None,
+            help="Date archive you want to verify(require --archive-path)",
+        )
+        verify_mode.add_argument(
+            "--archive-path",
+            help="Path to your archive directory to find file to be verify"
         )
 
         return parser.parse_args()
@@ -118,19 +138,28 @@ class BackupService:
 
     @staticmethod
     def run_restore(**kwargs):
-        from backuper_app.utils.checksum import is_valid_checksum
+        from backuper_app.utils.checksum import validate_checksum
 
         file_path = Path(kwargs['file_path'])
-        checksum_path = file_path.with_name(file_path.name + ".sha256")
 
-        if is_valid_checksum(file_path, checksum_path):
-            restore = Restore(
-                file_path=file_path,
-                date=kwargs['date'],
-                extract_path=kwargs['extract_path'],
-                archive_path=kwargs["archive_path"],
-            )
-            restore.do_restore()
+        validate_checksum(file_path)
+
+        restore = Restore(
+            file_path=file_path,
+            date=kwargs['date'],
+            extract_path=kwargs['extract_path'],
+            archive_path=kwargs["archive_path"],
+        )
+        restore.do_restore()
+
+def _valid_input_archive(args):
+    if args.file and args.date:
+        raise ValueError("Unexpected argument, choose one format(file/date)")
+
+    if args.date and not args.archive_path:
+        raise ValueError("Missing --archive-path flag to use --date")
+
+    return True
 
 def main():
     try:
@@ -147,20 +176,29 @@ def main():
 
                 logger.info("Target has been backup!")
             case "restore":
-                if args.file and args.date:
-                    raise ValueError("Unexpected argument, choose one format(file/date)")
-
-                if args.date and not args.archive_path:
-                    raise ValueError("Missing --archive-path flag to use --date")
-
-                logger.info(f"Restoring {args.file or args.date}...")
-                backup_service.run_restore(
-                    file_path=args.file,
-                    date=args.date,
-                    extract_path=args.destination,
-                    archive_path=args.archive_path,
-                )
-                logger.info("Restore completed.")
+                if _valid_input_archive(args):
+                    logger.info(f"Restoring {args.file or args.date}...")
+                    backup_service.run_restore(
+                        file_path=args.file,
+                        date=args.date,
+                        extract_path=args.destination,
+                        archive_path=args.archive_path,
+                    )
+                    logger.info("Restore completed.")
+            case "verify":
+                if _valid_input_archive(args):
+                    target = args.file or args.date
+                    logger.info(f"Verifying {target}")
+                    verify = Verify(
+                        file_path=args.file,
+                        date=args.date,
+                        archive_path=args.archive_path,
+                    )
+                    is_valid = verify.do_verify()
+                    if is_valid:
+                        logger.info(f"Archive verification passed for {target}")
+            case _:
+                raise ValueError(f"Invalid command {args.command}")
 
     except Exception as e:
         logger.error(e)
