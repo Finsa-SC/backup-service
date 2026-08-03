@@ -26,5 +26,15 @@ def get_archive_by_path(archive_path: Path):
     else:
         raise FileNotFoundError(f"{archive_path} is doesn't exist or not a file")
 
+#Get list of path with name match
+def get_backup_glob(destination: Path, backup_name: str) -> list[Path]:
+    path_list = list(
+        destination.glob(f"{backup_name}*")
+    )
+    backups_list = [backup for backup in path_list if not str(backup).endswith(".sha256")]
+
+    backups_list.sort(key=lambda backup: backup.name)
+    return backups_list
+
 if __name__ == "__main__":
     print(get_archive_by_date(Path("/home/silence-suzuka/backup_archive"), "2026-07-31"))
