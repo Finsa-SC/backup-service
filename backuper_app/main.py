@@ -157,7 +157,7 @@ class BackupService:
         )
         restore.do_restore()
 
-def _valid_input_archive(file: Path, date: str, archive_path: Path):
+def _valid_input_archive(file: Path | None, date: str | None, archive_path: Path | None):
     if file and date:
         raise ValueError("Unexpected argument, choose one format(file/date)")
 
@@ -182,7 +182,7 @@ def main():
                 logger.info("Target has been backup!")
 
             case "restore":
-                if _valid_input_archive(args):
+                if _valid_input_archive(file=args.file, date=args.date, archive_path=args.archive_path):
                     logger.info(f"Restoring {args.file or args.date}...")
                     backup_service.run_restore(
                         file_path=args.file,
@@ -193,7 +193,7 @@ def main():
                     logger.info("Restore completed.")
 
             case "verify":
-                if _valid_input_archive(args):
+                if _valid_input_archive(file=args.file, date=args.date, archive_path=args.archive_path):
                     target = args.file or args.date
                     logger.info(f"Verifying {target}")
                     print(f"Archive path: {args.archive_path}")
