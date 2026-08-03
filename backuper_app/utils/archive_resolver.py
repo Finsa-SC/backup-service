@@ -27,7 +27,7 @@ def get_archive_by_path(archive_path: Path):
         raise FileNotFoundError(f"{archive_path} is doesn't exist or not a file")
 
 #Get list of path with name match
-def get_backup_glob(destination: Path, backup_name: str) -> list[Path]:
+def get_archive_glob(destination: Path, backup_name: str) -> list[Path]:
     path_list = list(
         destination.glob(f"{backup_name}*")
     )

@@ -1,3 +1,4 @@
+from backuper_app.exception import ChecksumNotFound
 from pathlib import Path
 import hashlib
 
@@ -40,7 +41,13 @@ def validate_checksum(file_path: Path) -> None:
     #Resolve checksum path for file
     checksum_path = file_path.with_name(file_path.name + ".sha256")
 
-    expected = read_hash_from_checksum(checksum_path)
+    #Validate checksum file
+    if checksum_path and checksum_path.is_file():
+        expected = read_hash_from_checksum(checksum_path)
+    else:
+        raise ChecksumNotFound(f"Checksum file not found for {checksum_path}")
+    print(checksum_path)
+
     actual = calculate_hash(file_path)
     if expected != actual:
         raise ValueError(f"Checksum mismatch for {file_path.name}: expected {expected}, got {actual}")

@@ -4,6 +4,7 @@ from backuper_app.backup import Backuper, Retention, Archive, Verify
 from backuper_app.backup.restore import Restore
 from backuper_app.config import Config
 from backuper_app.utils import get_logger
+from backuper_app.exception import ChecksumNotFound
 
 logger = get_logger(__name__)
 
@@ -38,6 +39,8 @@ class BackupService:
         backup_mode.add_argument(
             "--config",
             required=True,
+            type=Path,
+            default=None,
             help="Path to Configuration target",
         )
 
@@ -91,6 +94,8 @@ class BackupService:
         )
         verify_mode.add_argument(
             "--archive-path",
+            type=Path,
+            default=None,
             help="Path to your archive directory to find file to be verify"
         )
 
@@ -175,6 +180,7 @@ def main():
                 backup_service.run_backup(config)
 
                 logger.info("Target has been backup!")
+
             case "restore":
                 if _valid_input_archive(args):
                     logger.info(f"Restoring {args.file or args.date}...")
@@ -185,10 +191,12 @@ def main():
                         archive_path=args.archive_path,
                     )
                     logger.info("Restore completed.")
+
             case "verify":
                 if _valid_input_archive(args):
                     target = args.file or args.date
                     logger.info(f"Verifying {target}")
+                    print(f"Archive path: {args.archive_path}")
                     verify = Verify(
                         file_path=args.file,
                         date=args.date,
@@ -200,6 +208,8 @@ def main():
             case _:
                 raise ValueError(f"Invalid command {args.command}")
 
+    except ChecksumNotFound as e:
+        logger.warning(e)
     except Exception as e:
         logger.error(e)
 

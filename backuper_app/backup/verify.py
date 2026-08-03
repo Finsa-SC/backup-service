@@ -11,14 +11,18 @@ class Verify:
         if self.file_path:
             archive_file = get_archive_by_path(self.file_path)
         elif self.date and self.archive_path:
-            archive_file = get_archive_by_date(self.archive_path, date=self.date)[0]
+            #Find path that not hash file
+            match_archives = get_archive_by_date(self.archive_path, date=self.date)
+            backup_files = [file for file in match_archives if not str(file).endswith(".sha256")]
+            archive_file = backup_files[-1]
         else:
             raise ValueError("Missing argument for Verify command")
 
+        #Validate checksum and raise error if any problem occured
         validate_checksum(archive_file)
 
         return True
 
 if __name__ == "__main__":
-    verify = Verify(Path("/home/silence-suzuka/backup_archive/2026/Aug/playground_20260731_182432.tar.zst"))
+    verify = Verify(date="2026-08-02", archive_path=Path("/home/silence-suzuka/backup_archive"))
     verify.do_verify()

@@ -1,5 +1,5 @@
 from pathlib import Path
-from backuper_app.utils import get_logger
+from backuper_app.utils import get_logger, get_archive_glob
 
 logger = get_logger(__name__)
 
@@ -8,16 +8,6 @@ class Retention:
         self._destination: Path = destination
         self._backup_name = backup_name
         self._keep_last = keep_last
-
-    #Get list of path with name match
-    def get_backup_glob(self) -> list[Path]:
-        path_list = list(
-            self._destination.glob(f"{self._backup_name}*")
-        )
-        backups_list = [backup for backup in path_list if not str(backup).endswith(".sha256")]
-
-        backups_list.sort(key=lambda backup: backup.name)
-        return backups_list
 
     def should_delete_backup(self, backups: list[Path]) -> bool:
         return len(backups) > self._keep_last
@@ -35,7 +25,7 @@ class Retention:
         return expired_backups
 
     def do_retention(self):
-        expired_backups = self.get_backup_glob()
+        expired_backups = get_archive_glob(self._destination, self._backup_name)
         should_delete = self.get_should_delete(expired_backups)
 
         return should_delete
@@ -43,4 +33,4 @@ class Retention:
 
 if __name__ == "__main__":
     retention = Retention(Path("/home/silence-suzuka/backup_test"), "playground", 7)
-    print(retention.get_backup_glob())
+    # print(get_archive_glob())
