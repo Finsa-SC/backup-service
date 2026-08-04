@@ -3,7 +3,7 @@ from pathlib import Path
 import hashlib
 
 def make_file_checksum(path_file: Path, hashed_file: str) -> Path:
-    checksum_path =  path_file.with_name(path_file.name + ".sha256")
+    checksum_path =  path_file.with_suffix(path_file.suffix + ".sha256")
 
     checksum_path.touch(mode=0o664, exist_ok=False)
 
@@ -42,7 +42,7 @@ def is_checksum_file(path: Path) -> bool:
 #Return bool, expected and actual hash
 def validate_checksum(file_path: Path) -> None:
     #Resolve checksum path for file
-    checksum_path = file_path.with_name(file_path.name + ".sha256")
+    checksum_path = file_path.with_suffix(file_path.suffix + ".sha256")
 
     #Validate checksum file
     if checksum_path and checksum_path.is_file():

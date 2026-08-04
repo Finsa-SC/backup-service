@@ -19,7 +19,7 @@ class Retention:
             oldest_backup = oldest_backups.pop(0)
             expired_backups.append(oldest_backup)
 
-            backup_checksum = oldest_backup.with_name(oldest_backup.name + ".sha256")
+            backup_checksum = oldest_backup.with_suffix(oldest_backup.suffix + ".sha256")
             if backup_checksum.is_file():
                 expired_backups.append(backup_checksum)
 
