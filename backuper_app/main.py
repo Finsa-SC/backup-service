@@ -111,12 +111,15 @@ class BackupService:
     def run_backup(config):
         from backuper_app.utils.checksum import make_hash
 
+        parent_path = config.target.parent
+
         backuper = Backuper(
             target_path=config.target,
             destination_path=config.destination,
+            parent_path=parent_path,
             backup_name=config.backup_name,
             compression_type=config.compression,
-            link_mode=config.link_mode
+            link_mode=config.link_mode,
         )
 
         logger.info(f"Creating backup for {config.target.name}...")

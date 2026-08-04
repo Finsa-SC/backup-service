@@ -6,9 +6,10 @@ from .compression import resolve_compression_from_config
 logger = get_logger(__name__)
 
 class Backuper:
-    def __init__(self, target_path: Path, destination_path: Path, backup_name=None, compression_type: str = "zstd", link_mode: str = "follow"):
+    def __init__(self, target_path: Path, destination_path: Path, parent_path: Path, backup_name=None, compression_type: str = "zstd", link_mode: str = "follow"):
         self.target_path = target_path
         self.destination_path = destination_path
+        self.parent_path = parent_path
         self.backup_name = backup_name
         self.compression_type = compression_type
         self.link_mode = link_mode
@@ -28,7 +29,8 @@ class Backuper:
             case "ignore":
                 for path in self.target_path.iterdir():
                     if path.is_symlink():
-                        command.insert(4, f"--exclude={path.relative_to(path.parents[1])}")
+                        relative_path = path.relative_to(self.parent_path)
+                        command.insert(4, f"--exclude={relative_path}")
                 return command
             case _:
                 raise ValueError(f"Invalid link mode: {self.link_mode}, expected=follow/preserve/ignore")
@@ -39,13 +41,12 @@ class Backuper:
         compression = resolve_compression_from_config(self.compression_type)
 
         backup_path = self.destination_path / f"{backup_name}.tar.{compression.suffix}"
-        parent_path = self.target_path.parent
 
         str_command = [
             "tar",
             compression.compress_flag,
             "-C",
-            str(parent_path),
+            str(self.parent_path),
             "-cf",
             str(backup_path),
             f"{self.target_path.name}"
