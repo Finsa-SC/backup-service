@@ -14,6 +14,9 @@ class Backuper:
         self.compression_type = compression_type
         self.link_mode = link_mode
 
+        if not self.target_path.is_relative_to(self.parent_path):
+            raise ValueError(f"Mismatch target path and parent path: parent={self.parent_path} target={self.target_path}")
+
     @staticmethod
     def set_backup_name(backup_name: str) -> str:
         return f"{backup_name}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
