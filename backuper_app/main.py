@@ -116,6 +116,7 @@ class BackupService:
             destination_path=config.destination,
             backup_name=config.backup_name,
             compression_type=config.compression,
+            link_mode=config.link_mode
         )
 
         logger.info(f"Creating backup for {config.target.name}...")

@@ -6,15 +6,32 @@ from .compression import resolve_compression_from_config
 logger = get_logger(__name__)
 
 class Backuper:
-    def __init__(self, target_path, destination_path, backup_name=None, compression_type: str = "zstd"):
-        self.target_path = Path(target_path)
-        self.destination_path = Path(destination_path)
+    def __init__(self, target_path: Path, destination_path: Path, backup_name=None, compression_type: str = "zstd", link_mode: str = "follow"):
+        self.target_path = target_path
+        self.destination_path = destination_path
         self.backup_name = backup_name
         self.compression_type = compression_type
+        self.link_mode = link_mode
 
     @staticmethod
     def set_backup_name(backup_name: str) -> str:
         return f"{backup_name}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
+
+    def run_link_mode(self, command: list[str]) -> list[str]:
+        print(self.link_mode)
+        match self.link_mode:
+            case "follow":
+                command.append("--dereference")
+                return command
+            case "preserve":
+                return command
+            case "ignore":
+                for path in self.target_path.iterdir():
+                    if path.is_symlink():
+                        command.insert(4, f"--exclude={path.relative_to(path.parents[1])}")
+                return command
+            case _:
+                raise ValueError(f"Invalid link mode: {self.link_mode}")
 
     def compress(self) -> Path:
         backup_name = self.set_backup_name(self.backup_name)
@@ -33,8 +50,11 @@ class Backuper:
             str(backup_path),
             f"{self.target_path.name}"
         ]
+
+        command = self.run_link_mode(str_command)
+        print(f"command: {command}")
         result = subprocess.run(
-            str_command,
+            command,
             capture_output=True,
             text=True,
         )

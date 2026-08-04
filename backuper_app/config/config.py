@@ -14,6 +14,7 @@ class BackupConfig:
     compression: str
     archive_enable: bool
     archive_path: Path
+    link_mode: str = "follow"
 
 class Config:
     def __init__(self, config_path: Path):
@@ -48,4 +49,5 @@ class Config:
             compression=backup.get("compression", None),
             archive_enable=archive.get("enabled", False),
             archive_path=Path(archive.get("path", None)),
+            link_mode=backup["link_mode"]
         )
