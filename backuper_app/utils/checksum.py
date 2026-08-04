@@ -49,7 +49,6 @@ def validate_checksum(file_path: Path) -> None:
         expected = read_hash_from_checksum(checksum_path)
     else:
         raise ChecksumNotFound(f"Checksum file not found for {checksum_path}")
-    print(checksum_path)
 
     actual = calculate_hash(file_path)
     if expected != actual:

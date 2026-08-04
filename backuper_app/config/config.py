@@ -10,6 +10,7 @@ class BackupConfig:
     target: Path
     destination: Path
     backup_name: str | None
+    exclude: list[str] | None
     keep_last: int
     compression: str
     archive_enable: bool
@@ -37,6 +38,7 @@ class Config:
         backup = config["backup"]
         retention = config["retention"]
         archive = config["archive"]
+        config_filter = config["filter"]
 
         target_backup = Path(backup["target"])
         backup_name = self._set_backup_name(backup.get("backup_name", None), target_backup)
@@ -45,6 +47,7 @@ class Config:
             target=target_backup,
             destination=Path(backup["destination"]),
             backup_name=backup_name,
+            exclude=config_filter.get("exclude", None),
             keep_last=retention.get("keep_last", None),
             compression=backup.get("compression", None),
             archive_enable=archive.get("enabled", False),

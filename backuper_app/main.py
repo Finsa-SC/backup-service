@@ -117,6 +117,7 @@ class BackupService:
             target_path=config.target,
             destination_path=config.destination,
             parent_path=parent_path,
+            exclude=config.exclude,
             backup_name=config.backup_name,
             compression_type=config.compression,
             link_mode=config.link_mode,
@@ -200,7 +201,6 @@ def main():
                 if _valid_input_archive(file=args.file, date=args.date, archive_path=args.archive_path):
                     target = args.file or args.date
                     logger.info(f"Verifying {target}")
-                    print(f"Archive path: {args.archive_path}")
                     verify = Verify(
                         file_path=args.file,
                         date=args.date,
