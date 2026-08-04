@@ -117,6 +117,7 @@ class BackupService:
             target_path=config.target,
             destination_path=config.destination,
             parent_path=parent_path,
+            include=config.include,
             exclude=config.exclude,
             backup_name=config.backup_name,
             compression_type=config.compression,

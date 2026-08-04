@@ -7,6 +7,9 @@ compression = "gzip"
 link_mode = "ignore" #follow/preserve/ignore
 
 [filter]
+include = [
+    "dirwatcher/",
+]
 exclude = [
     ".venv",
     "dist/",

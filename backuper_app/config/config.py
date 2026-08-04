@@ -10,6 +10,7 @@ class BackupConfig:
     target: Path
     destination: Path
     backup_name: str | None
+    include: list[str] | None
     exclude: list[str] | None
     keep_last: int
     compression: str
@@ -47,6 +48,7 @@ class Config:
             target=target_backup,
             destination=Path(backup["destination"]),
             backup_name=backup_name,
+            include=config_filter.get("include", None),
             exclude=config_filter.get("exclude", None),
             keep_last=retention.get("keep_last", None),
             compression=backup.get("compression", None),
