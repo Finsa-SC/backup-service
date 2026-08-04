@@ -1,7 +1,6 @@
 import subprocess, datetime
 from pathlib import Path
 from backuper_app.utils import get_logger
-from test.relative_pathtt import parent_path
 from .compression import resolve_compression_from_config
 
 logger = get_logger(__name__)
@@ -65,7 +64,6 @@ class Backuper:
 
         backup_path = self.destination_path / f"{backup_name}.tar.{compression.suffix}"
 
-
         str_command = [
             "tar",
             compression.compress_flag,
@@ -76,7 +74,7 @@ class Backuper:
         ]
 
         if self.include:
-            target_backup = [path.relative_to(parent_path) for path in self.resolve_glob_file(self.include)]
+            target_backup = [path.relative_to(self.parent_path) for path in self.resolve_glob_file(self.include)]
         else:
             target_backup = [self.target_path.name]
 
