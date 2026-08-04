@@ -31,7 +31,7 @@ class Backuper:
                         command.insert(4, f"--exclude={path.relative_to(path.parents[1])}")
                 return command
             case _:
-                raise ValueError(f"Invalid link mode: {self.link_mode}")
+                raise ValueError(f"Invalid link mode: {self.link_mode}, expected=follow/preserve/ignore")
 
     def compress(self) -> Path:
         backup_name = self.set_backup_name(self.backup_name)
