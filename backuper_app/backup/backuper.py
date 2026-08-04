@@ -1,6 +1,7 @@
 import subprocess, datetime
 from pathlib import Path
 from backuper_app.utils import get_logger
+from test.relative_pathtt import parent_path
 from .compression import resolve_compression_from_config
 
 logger = get_logger(__name__)
@@ -33,12 +34,12 @@ class Backuper:
     def set_backup_name(backup_name: str) -> str:
         return f"{backup_name}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
-    def resolve_glob_file(self, glob_list: list[str]) -> list[Path]:
-        path_list = []
-        if self.exclude:
-            for glob in glob_list:
-                path_list = [path for path in self.target_path.rglob(glob)]
-        return path_list
+    def resolve_glob_file(self, glob_list: list[str]) -> set[Path]:
+        path_set = set()
+        for glob in glob_list:
+            for path in self.target_path.glob(glob):
+                path_set.add(path)
+        return path_set
 
     #Update command depend on link mode
     def run_link_mode(self, command: list[str]) -> list[str]:
@@ -64,6 +65,7 @@ class Backuper:
 
         backup_path = self.destination_path / f"{backup_name}.tar.{compression.suffix}"
 
+
         str_command = [
             "tar",
             compression.compress_flag,
@@ -74,12 +76,13 @@ class Backuper:
         ]
 
         if self.include:
-            target_backup = self.resolve_glob_file(self.include)
+            target_backup = [path.relative_to(parent_path) for path in self.resolve_glob_file(self.include)]
         else:
             target_backup = [self.target_path.name]
 
         str_command.extend(target_backup)
 
+        #Set exclude file
         if self.exclude:
             for exclude_path in self.resolve_glob_file(self.exclude):
                 relative_path = exclude_path.relative_to(self.parent_path)

@@ -8,13 +8,13 @@ link_mode = "ignore" #follow/preserve/ignore
 
 [filter]
 include = [
-    "dirwatcher/",
+    "*/dirwatcher/",
 ]
 exclude = [
     ".venv",
     "dist/",
-    "main.py",
-    ".gitignore",
+    "**.__pychache__/",
+    "**/*.pyc",
 ]
 
 [retention]
