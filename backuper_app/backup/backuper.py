@@ -3,6 +3,7 @@ from pathlib import Path
 from backuper_app.utils import get_logger
 from .filter_engine import FilterEngine
 from .compression import resolve_compression_from_config
+from .manifest import create_manifest_data
 
 logger = get_logger(__name__)
 
@@ -44,10 +45,10 @@ class Backuper:
         str_command = [
             "tar",
             compression.compress_flag,
-            "-C",
-            str(self.parent_path),
             "-cf",
             str(backup_path),
+            "-C",
+            str(self.parent_path),
         ]
 
         filter_engine = FilterEngine(
@@ -57,6 +58,22 @@ class Backuper:
             link_mode=self.link_mode,
         )
         str_command.extend(filter_engine.do_filtering())
+
+        #Add manifest file
+        manifest_path = create_manifest_data(
+            backup_name=backup_name,
+            target_path=self.target_path,
+            include=self.include if self.include else [],
+            exclude=self.exclude if self.exclude else [],
+        )
+        temp_path = Path("/tmp")
+        manifest_relative_path = manifest_path.relative_to(temp_path)
+        manifest_command = [
+            "-C",
+            str(temp_path),
+            str(manifest_relative_path),
+        ]
+        str_command.extend(manifest_command)
 
         result = subprocess.run(
             str_command,
