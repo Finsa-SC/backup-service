@@ -3,3 +3,6 @@ class ChecksumMismatchError(ValueError):
 
 class ChecksumNotFound(ValueError):
     ...
+
+class FilterEmptyError(RuntimeError):
+    ...

@@ -57,7 +57,12 @@ class Backuper:
             exclude=self.exclude,
             link_mode=self.link_mode,
         )
-        str_command.extend(filter_engine.do_filtering())
+        backup_list = filter_engine.do_filtering()
+        if backup_list:
+            str_command.extend(backup_list)
+        else:
+            from backuper_app.exception import FilterEmptyError
+            raise FilterEmptyError(f"No files matched the configured include patterns: {self.include}")
 
         #Add manifest file
         temp_dir_path = create_manifest_data(
