@@ -81,6 +81,10 @@ class Backuper:
             text=True,
         )
 
+        #Remove temporary manifest
+        import shutil
+        shutil.rmtree(temp_dir_path)
+
         if result.returncode != 0:
             backup_path.unlink(missing_ok=True)
             raise ChildProcessError(result.stderr)
