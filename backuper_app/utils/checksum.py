@@ -1,4 +1,4 @@
-from backuper_app.exception import ChecksumNotFound
+from backuper_app.exception import ChecksumNotFoundError, ChecksumMismatchError
 from pathlib import Path
 import hashlib
 
@@ -48,11 +48,11 @@ def validate_checksum(file_path: Path) -> None:
     if checksum_path and checksum_path.is_file():
         expected = read_hash_from_checksum(checksum_path)
     else:
-        raise ChecksumNotFound(f"Checksum file not found for {checksum_path}")
+        raise ChecksumNotFoundError(f"Checksum file not found for {checksum_path}")
 
     actual = calculate_hash(file_path)
     if expected != actual:
-        raise ValueError(f"Checksum mismatch for {file_path.name}: expected {expected}, got {actual}")
+        raise ChecksumMismatchError(f"Checksum mismatch for {file_path.name}: expected {expected}, got {actual}")
 
 if __name__ == "__main__":
     make_hash(Path("/home/silence-suzuka/backup_test/playground_20260731_182432.tar.zst"))

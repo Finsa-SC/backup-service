@@ -1,8 +1,11 @@
-class ChecksumMismatchError(ValueError):
+class BackuperError(Exception):
     ...
 
-class ChecksumNotFound(ValueError):
+class ChecksumMismatchError(BackuperError):
     ...
 
-class FilterEmptyError(RuntimeError):
+class ChecksumNotFoundError(BackuperError):
+    ...
+
+class FilterEmptyError(BackuperError):
     ...

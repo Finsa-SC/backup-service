@@ -4,7 +4,7 @@ from backuper_app.backup import Backuper, Retention, Archive, Verify
 from backuper_app.backup.restore import Restore
 from backuper_app.config import Config
 from backuper_app.utils import get_logger
-from backuper_app.exception import ChecksumNotFound
+from backuper_app.exception import BackuperError
 
 logger = get_logger(__name__)
 
@@ -213,7 +213,7 @@ def main():
             case _:
                 raise ValueError(f"Invalid command {args.command}")
 
-    except ChecksumNotFound as e:
+    except BackuperError as e:
         logger.warning(e)
     except Exception as e:
         logger.error(e)
