@@ -54,3 +54,4 @@ build/
 *.egg-info/
 systemd/
 test/
+test_config.toml
