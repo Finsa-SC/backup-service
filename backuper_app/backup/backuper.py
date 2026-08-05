@@ -1,6 +1,7 @@
 import subprocess, datetime
 from pathlib import Path
 from backuper_app.utils import get_logger
+from .filter_engine import FilterEngine
 from .compression import resolve_compression_from_config
 
 logger = get_logger(__name__)
@@ -33,30 +34,6 @@ class Backuper:
     def set_backup_name(backup_name: str) -> str:
         return f"{backup_name}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
-    def resolve_glob_file(self, glob_list: list[str]) -> set[Path]:
-        path_set = set()
-        for glob in glob_list:
-            for path in self.target_path.glob(glob):
-                path_set.add(path)
-        return path_set
-
-    #Update command depend on link mode
-    def run_link_mode(self, command: list[str]) -> list[str]:
-        match self.link_mode:
-            case "follow":
-                command.append("--dereference")
-                return command
-            case "preserve":
-                return command
-            case "ignore":
-                for path in self.target_path.iterdir():
-                    if path.is_symlink():
-                        relative_path = path.relative_to(self.parent_path)
-                        command.insert(4, f"--exclude={relative_path}")
-                return command
-            case _:
-                raise ValueError(f"Invalid link mode: {self.link_mode}, expected=follow/preserve/ignore")
-
     def compress(self) -> Path:
         backup_name = self.set_backup_name(self.backup_name)
 
@@ -73,22 +50,16 @@ class Backuper:
             str(backup_path),
         ]
 
-        if self.include:
-            target_backup = [path.relative_to(self.parent_path) for path in self.resolve_glob_file(self.include)]
-        else:
-            target_backup = [self.target_path.name]
+        filter_engine = FilterEngine(
+            target_path=self.target_path,
+            include=self.include,
+            exclude=self.exclude,
+            link_mode=self.link_mode,
+        )
+        str_command.extend(filter_engine.do_filtering())
 
-        str_command.extend(target_backup)
-
-        #Set exclude file
-        if self.exclude:
-            for exclude_path in self.resolve_glob_file(self.exclude):
-                relative_path = exclude_path.relative_to(self.parent_path)
-                str_command.insert(4, f"--exclude={relative_path}")
-
-        command = self.run_link_mode(str_command)
         result = subprocess.run(
-            command,
+            str_command,
             capture_output=True,
             text=True,
         )
