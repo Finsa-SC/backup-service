@@ -1,12 +1,20 @@
 import json
 from pathlib import Path
 from datetime import datetime
-import tempfile
+from tempfile import TemporaryDirectory
 
+#Return temporary directory path
 def make_temp_manifest(backup_name: str, data: dict) -> Path:
-    with tempfile.NamedTemporaryFile(mode="w+", prefix=f".{backup_name}", suffix=".json", delete=False) as temp_file:
-        json.dump(data, temp_file, indent=4)
-        return Path(temp_file.name)
+    with TemporaryDirectory(delete=False) as temp_dir:
+        dir_path = Path(temp_dir)
+
+        backuper_path = Path(dir_path / ".manifest")
+        backuper_path.mkdir(exist_ok=True, parents=True)
+
+        manifest_file = backuper_path / "manifest.json"
+        with manifest_file.open('w')as man_file:
+            json.dump(data, man_file, indent=4)
+        return Path(dir_path)
 
 def create_manifest_data(
         backup_name: str,
@@ -19,7 +27,7 @@ def create_manifest_data(
         created_at=datetime.now().replace(microsecond=0).isoformat() + "Z",
         target=str(target_path),
         include=include,
-        exclude=exclude
+        exclude=exclude,
     )
 
     return make_temp_manifest(backup_name, manifest_data)

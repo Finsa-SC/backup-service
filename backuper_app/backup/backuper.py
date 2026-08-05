@@ -60,17 +60,17 @@ class Backuper:
         str_command.extend(filter_engine.do_filtering())
 
         #Add manifest file
-        manifest_path = create_manifest_data(
+        temp_dir_path = create_manifest_data(
             backup_name=backup_name,
             target_path=self.target_path,
             include=self.include if self.include else [],
             exclude=self.exclude if self.exclude else [],
         )
-        temp_path = Path("/tmp")
-        manifest_relative_path = manifest_path.relative_to(temp_path)
+
+        manifest_relative_path = Path(temp_dir_path / ".manifest").relative_to(temp_dir_path)
         manifest_command = [
             "-C",
-            str(temp_path),
+            str(temp_dir_path),
             str(manifest_relative_path),
         ]
         str_command.extend(manifest_command)
