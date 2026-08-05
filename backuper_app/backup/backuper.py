@@ -17,7 +17,11 @@ class Backuper:
             exclude: list[str] | None,
             backup_name=None,
             compression_type: str = "zstd",
-            link_mode: str = "follow"
+            link_mode: str = "follow",
+            dry_run: bool = False,
+            archive_enabled: bool = False,
+            archive_path: Path | None = None,
+            retention: int | None = None
     ):
         self.target_path = target_path
         self.destination_path = destination_path
@@ -27,6 +31,10 @@ class Backuper:
         self.link_mode = link_mode
         self.exclude = exclude
         self.include = include
+        self.dry_run = dry_run
+        self.archive_enabled = archive_enabled
+        self.archive_path = archive_path
+        self.retention = retention
 
         if not self.target_path.is_relative_to(self.parent_path):
             raise ValueError(f"Mismatch target path and parent path: parent={self.parent_path} target={self.target_path}")
@@ -58,7 +66,23 @@ class Backuper:
             link_mode=self.link_mode,
         )
         backup_list = filter_engine.do_filtering()
-        if backup_list:
+        if self.dry_run:
+            from .analyzer import Analyzer
+
+            analyzer = Analyzer(
+                self.target_path,
+                destination=self.destination_path,
+                files=backup_list,
+                compression_type=self.compression_type,
+                link_mode=self.link_mode,
+                include=self.include,
+                exclude=self.exclude,
+                archive_enabled=self.archive_enabled and self.archive_path,
+                retention=self.retention,
+            )
+            analyzer.analyze_statistic()
+            exit(0)
+        elif backup_list:
             str_command.extend(backup_list)
         else:
             from backuper_app.exception import FilterEmptyError

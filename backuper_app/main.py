@@ -43,6 +43,11 @@ class BackupService:
             default=None,
             help="Path to Configuration target",
         )
+        backup_mode.add_argument(
+            "--dry-run",
+            action="store_true",
+            help="Trial without actually taking action"
+        )
 
         #Restore Mode
         restore_mode = subparser.add_parser(
@@ -68,11 +73,11 @@ class BackupService:
             "--destination",
             type=Path,
             default=Path("/tmp/backup_restore"),
-            help="Path to extract directory destination you want, default is /tmp/backup_restore"
+            help="Path to extract directory destination you want, default is /tmp/backup_restore",
         )
         restore_mode.add_argument(
             "--archive-path",
-            help="Path to your archive directory to find file to be extract"
+            help="Path to your archive directory to find file to be extract",
         )
 
         verify_mode = subparser.add_parser(
@@ -96,7 +101,7 @@ class BackupService:
             "--archive-path",
             type=Path,
             default=None,
-            help="Path to your archive directory to find file to be verify"
+            help="Path to your archive directory to find file to be verify",
         )
 
         return parser.parse_args()
@@ -104,11 +109,11 @@ class BackupService:
     @staticmethod
     def load_config(argsv):
         config_path = Path(argsv.config)
-        backup_config = Config(config_path, )
+        backup_config = Config(config_path)
         return backup_config.set_config()
 
     @staticmethod
-    def run_backup(config):
+    def run_backup(config, dry_run: bool):
         from backuper_app.utils.checksum import make_hash
 
         parent_path = config.target.parent
@@ -122,6 +127,10 @@ class BackupService:
             backup_name=config.backup_name,
             compression_type=config.compression,
             link_mode=config.link_mode,
+            dry_run=dry_run,
+            archive_enabled=config.archive_enable,
+            archive_path=config.archive_path,
+            retention=config.keep_last
         )
 
         logger.info(f"Creating backup for {config.target.name}...")
@@ -131,12 +140,12 @@ class BackupService:
         checksum_path = make_hash(backup_path)
         logger.info(f"Checksum file has been created for {backup_path.name} as {checksum_path.name}")
 
-        #Check retention if enable
+        #Check retention enabled
         if config.keep_last:
             backup_retention = Retention(
                 destination=config.destination,
                 backup_name=config.backup_name,
-                keep_last=config.keep_last
+                keep_last=config.keep_last,
             )
             should_delete = backup_retention.do_retention()
 
@@ -183,7 +192,7 @@ def main():
                 logger.info("Starting backup service...")
 
                 config = backup_service.load_config(args)
-                backup_service.run_backup(config)
+                backup_service.run_backup(config, args.dry_run)
 
                 logger.info("Target has been backup!")
 

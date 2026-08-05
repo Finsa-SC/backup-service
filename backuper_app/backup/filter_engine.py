@@ -24,8 +24,8 @@ class FilterEngine:
                 link_file.add(file)
         return link_file
 
-    def do_filtering(self) -> list[str]:
-        filtered = []
+    def do_filtering(self) -> list[Path]:
+        filtered: list[Path] = []
 
         #Get base file
         if self.include:
