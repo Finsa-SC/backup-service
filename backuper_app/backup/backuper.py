@@ -65,6 +65,8 @@ class Backuper:
             target_path=self.target_path,
             include=self.include if self.include else [],
             exclude=self.exclude if self.exclude else [],
+            compression=self.compression_type,
+            link_mode=self.link_mode,
         )
 
         manifest_relative_path = Path(temp_dir_path / ".manifest").relative_to(temp_dir_path)

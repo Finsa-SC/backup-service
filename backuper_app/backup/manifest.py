@@ -21,6 +21,8 @@ def create_manifest_data(
         target_path: Path,
         include: list[str],
         exclude: list[str],
+        compression: str,
+        link_mode: str,
 ):
     manifest_data = dict(
         backup_name=backup_name,
@@ -28,6 +30,8 @@ def create_manifest_data(
         target=str(target_path),
         include=include,
         exclude=exclude,
+        compression=compression,
+        link_mode=link_mode,
     )
 
     return make_temp_manifest(backup_name, manifest_data)
