@@ -102,8 +102,11 @@ class Analyzer:
         Keep last   : {self.retention}
         """)
 
-        logger.info("Dry run completed successfully")
-        logger.info("No filesystem changed were made")
+        logger.info("""
+        Result
+        Dry run completed successfully
+        No filesystem changes were made
+        """)
 
     def analyze_statistic(self):
         mapping = self.get_file_statistic()
