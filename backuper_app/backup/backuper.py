@@ -1,6 +1,6 @@
 import subprocess, datetime
 from pathlib import Path
-from backuper_app.utils import get_logger
+from backuper_app.utils import get_logger, is_enough_space
 from .filter_engine import FilterEngine
 from .compression import resolve_compression_from_config
 from .manifest import create_manifest_data
@@ -43,12 +43,13 @@ class Backuper:
     def set_backup_name(backup_name: str) -> str:
         return f"{backup_name}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
-    def compress(self) -> Path:
-        backup_name = self.set_backup_name(self.backup_name)
-
-        compression = resolve_compression_from_config(self.compression_type)
-
-        backup_path = self.destination_path / f"{backup_name}.tar.{compression.suffix}"
+    def compress(
+            self,
+            compression,
+            backup_path: Path,
+            backup_name: str,
+            backup_list: list[Path],
+    ) -> Path:
 
         str_command = [
             "tar",
@@ -59,34 +60,12 @@ class Backuper:
             str(self.parent_path),
         ]
 
-        filter_engine = FilterEngine(
-            target_path=self.target_path,
-            include=self.include,
-            exclude=self.exclude,
-            link_mode=self.link_mode,
-        )
-        backup_list = filter_engine.do_filtering()
-        if self.dry_run:
-            from .analyzer import Analyzer
 
-            analyzer = Analyzer(
-                self.target_path,
-                destination=self.destination_path,
-                files=backup_list,
-                compression_type=self.compression_type,
-                link_mode=self.link_mode,
-                include=self.include,
-                exclude=self.exclude,
-                archive_enabled=self.archive_enabled and self.archive_path,
-                retention=self.retention,
-            )
-            analyzer.analyze_statistic()
-            exit(0)
-        elif backup_list:
-            str_command.extend(backup_list)
-        else:
-            from backuper_app.exception import FilterEmptyError
-            raise FilterEmptyError(f"No files matched the configured include patterns: {self.include}")
+        # elif backup_list:
+        #     str_command.extend(backup_list)
+        # else:
+        #     from backuper_app.exception import FilterEmptyError
+        #     raise FilterEmptyError(f"No files matched the configured include patterns: {self.include}")
 
         #Add manifest file
         temp_dir_path = create_manifest_data(
@@ -124,15 +103,46 @@ class Backuper:
 
     def do_backup(self) -> Path:
         #Validate path
-        logger.debug(f"Validate path for {self.target_path}")
         if not self.target_path.exists():
             raise FileNotFoundError(f"Target path not found for {self.target_path}")
 
-        logger.debug(f"Validate path for {self.destination_path}")
         if not self.destination_path.exists():
             raise FileNotFoundError(f"Destination path not found for {self.destination_path}")
 
-        backup_path = self.compress()
+        # if is_enough_space()
+
+        backup_name = self.set_backup_name(self.backup_name)
+
+        compression = resolve_compression_from_config(self.compression_type)
+        backup_path = self.destination_path / f"{backup_name}.tar.{compression.suffix}"
+
+
+        filter_engine = FilterEngine(
+            target_path=self.target_path,
+            include=self.include,
+            exclude=self.exclude,
+            link_mode=self.link_mode,
+        )
+        backup_list = filter_engine.do_filtering()
+
+        if self.dry_run:
+            from .analyzer import Analyzer
+
+            analyzer = Analyzer(
+                self.target_path,
+                destination=self.destination_path,
+                files=backup_list,
+                compression_type=self.compression_type,
+                link_mode=self.link_mode,
+                include=self.include,
+                exclude=self.exclude,
+                archive_enabled=self.archive_enabled and self.archive_path,
+                retention=self.retention,
+            )
+            analyzer.analyze_statistic()
+            exit(0)
+        elif backup_list:
+            backup_path = self.compress(compression, backup_path=backup_path, )
 
         logger.debug(f"Backup for {self.target_path.name} success with no error found.")
 

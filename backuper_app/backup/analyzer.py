@@ -1,5 +1,5 @@
 from pathlib import Path
-from backuper_app.utils import get_logger
+from backuper_app.utils import get_logger, format_size
 
 logger = get_logger(__name__)
 
@@ -41,28 +41,6 @@ class Analyzer:
                 mapping['unknown'] += 1
 
         return mapping
-
-    def analyze_estimate_size(self) -> str:
-        size: float = 0
-        units = [
-            "B",
-            "KiB",
-            "MiB",
-            "GiB",
-            "TiB",
-        ]
-
-        for file in self.files:
-            if not file.is_dir():
-                size += file.lstat().st_size
-
-        byte = 1024
-        unit_index = 0
-        while size >= byte:
-            size /= byte
-            unit_index += 1
-
-        return f"{size:.2f} {units[unit_index]}"
 
     def show_statistic(self, file_statistic: dict[str, int]) -> None:
         logger.info("Starting dry run...")
