@@ -47,8 +47,10 @@ class Backuper:
             self,
             compression,
             backup_path: Path,
-            backup_name: str,
             backup_list: list[Path],
+            temp_dir_path: Path,
+            manifest_relative_path: Path,
+
     ) -> Path:
 
         str_command = [
@@ -63,17 +65,7 @@ class Backuper:
 
         str_command.extend(backup_list)
 
-        #Add manifest file
-        temp_dir_path = create_manifest_data(
-            backup_name=backup_name,
-            target_path=self.target_path,
-            include=self.include if self.include else [],
-            exclude=self.exclude if self.exclude else [],
-            compression=self.compression_type,
-            link_mode=self.link_mode,
-        )
 
-        manifest_relative_path = Path(temp_dir_path / ".manifest").relative_to(temp_dir_path)
         manifest_command = [
             "-C",
             str(temp_dir_path),
@@ -86,10 +78,6 @@ class Backuper:
             capture_output=True,
             text=True,
         )
-
-        #Remove temporary manifest
-        import shutil
-        shutil.rmtree(temp_dir_path)
 
         if result.returncode != 0:
             backup_path.unlink(missing_ok=True)
@@ -106,11 +94,6 @@ class Backuper:
             raise FileNotFoundError(f"Destination path not found for {self.destination_path}")
 
         # if is_enough_space()
-
-        backup_name = self.set_backup_name(self.backup_name)
-
-        compression = resolve_compression_from_config(self.compression_type)
-        backup_path = self.destination_path / f"{backup_name}.tar.{compression.suffix}"
 
 
         filter_engine = FilterEngine(
@@ -132,18 +115,40 @@ class Backuper:
                 link_mode=self.link_mode,
                 include=self.include,
                 exclude=self.exclude,
-                archive_enabled=self.archive_enabled and self.archive_path,
+                archive_enabled=self.archive_enabled is not None and self.archive_path is not None,
                 retention=self.retention,
             )
             analyzer.analyze_statistic()
             exit(0)
         elif backup_list:
+            backup_name = self.set_backup_name(self.backup_name)
+
+            compression = resolve_compression_from_config(self.compression_type)
+            backup_path = self.destination_path / f"{backup_name}.tar.{compression.suffix}"
+
+            #Add manifest file
+            temp_dir_path = create_manifest_data(
+                backup_name=backup_name,
+                target_path=self.target_path,
+                include=self.include if self.include else [],
+                exclude=self.exclude if self.exclude else [],
+                compression=self.compression_type,
+                link_mode=self.link_mode,
+            )
+
+            manifest_relative_path = Path(temp_dir_path / ".manifest").relative_to(temp_dir_path)
+
             backup_path = self.compress(
                 compression,
                 backup_path=backup_path,
-                backup_name=backup_name,
-                backup_list=backup_list
+                backup_list=backup_list,
+                temp_dir_path=temp_dir_path,
+                manifest_relative_path=manifest_relative_path,
             )
+
+            # Remove temporary manifest
+            import shutil
+            shutil.rmtree(temp_dir_path)
         else:
             from backuper_app.exception import FilterEmptyError
             raise FilterEmptyError(f"No files matched the configured include patterns: {self.include}")
