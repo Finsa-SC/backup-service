@@ -1,6 +1,7 @@
 import subprocess, datetime
 from pathlib import Path
-from backuper_app.utils import get_logger, is_enough_space, analyze_estimate_size, get_space_info
+from backuper_app.utils import get_logger, not_enough_space, analyze_estimate_size, get_space_info, format_size
+from backuper_app.exception import NotEnoughDiskSpaceError
 from .filter_engine import FilterEngine
 from .compression import resolve_compression_from_config
 from .manifest import create_manifest_data
@@ -124,14 +125,13 @@ class Backuper:
             required_space = analyze_estimate_size(files=backup_list)
             space_available = get_space_info(self.target_path)['space_available']
 
-            if not is_enough_space(required=required_space, space_available=space_available):
-                from backuper_app.exception import NotEnoughDiskSpaceError
+            if not_enough_space(required=required_space, space_available=space_available):
                 raise NotEnoughDiskSpaceError(f"""
                 Not enough disk space
                 
-                Required : {required_space}
-                Available: {space_available}
-                Destination: {self.target_path}
+                Required : {format_size(required_space)}
+                Available: {format_size(space_available)}
+                Destination: {self.destination_path}
                 """)
 
             backup_name = self.set_backup_name(self.backup_name)

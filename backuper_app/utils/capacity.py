@@ -34,5 +34,8 @@ def analyze_estimate_size(files: list[Path]) -> float:
 
     return size
 
-def is_enough_space(required: float, space_available: float) -> bool:
+def not_enough_space(required: float, space_available: float) -> bool:
     return required >= space_available
+
+if __name__ == "__main__":
+    print(not_enough_space(24, 120))
