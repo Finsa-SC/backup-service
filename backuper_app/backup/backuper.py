@@ -1,6 +1,6 @@
 import subprocess, datetime
 from pathlib import Path
-from backuper_app.utils import get_logger, is_enough_space
+from backuper_app.utils import get_logger, is_enough_space, analyze_estimate_size, get_space_info
 from .filter_engine import FilterEngine
 from .compression import resolve_compression_from_config
 from .manifest import create_manifest_data
@@ -121,12 +121,25 @@ class Backuper:
             analyzer.analyze_statistic()
             exit(0)
         elif backup_list:
+            required_space = analyze_estimate_size(files=backup_list)
+            space_available = get_space_info(self.target_path)['space_available']
+
+            if not is_enough_space(required=required_space, space_available=space_available):
+                from backuper_app.exception import NotEnoughDiskSpaceError
+                raise NotEnoughDiskSpaceError(f"""
+                Not enough disk space
+                
+                Required : {required_space}
+                Available: {space_available}
+                Destination: {self.target_path}
+                """)
+
             backup_name = self.set_backup_name(self.backup_name)
 
             compression = resolve_compression_from_config(self.compression_type)
             backup_path = self.destination_path / f"{backup_name}.tar.{compression.suffix}"
 
-            #Add manifest file
+            ###Add manifest file
             temp_dir_path = create_manifest_data(
                 backup_name=backup_name,
                 target_path=self.target_path,
@@ -138,6 +151,7 @@ class Backuper:
 
             manifest_relative_path = Path(temp_dir_path / ".manifest").relative_to(temp_dir_path)
 
+            ###Compress backup
             backup_path = self.compress(
                 compression,
                 backup_path=backup_path,

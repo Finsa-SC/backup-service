@@ -9,3 +9,6 @@ class ChecksumNotFoundError(BackuperError):
 
 class FilterEmptyError(BackuperError):
     ...
+
+class NotEnoughDiskSpaceError(BackuperError):
+    ...
