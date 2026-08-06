@@ -16,7 +16,7 @@ def format_size(size: float) -> str:
         size /= byte
         unit_index += 1
 
-    return f"{size} {units[unit_index]}"
+    return f"{size:.2f} {units[unit_index]}"
 
 def get_space_info(path: Path) -> dict[str, int]:
     space_info = shutil.disk_usage(path)
