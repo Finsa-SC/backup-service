@@ -194,7 +194,7 @@ def main():
                 config = backup_service.load_config(args)
                 backup_service.run_backup(config, args.dry_run)
 
-                logger.info("Target has been backup!")
+                logger.info(f"Successfully backed up {config.backup_name}.")
 
             case "restore":
                 if _valid_input_archive(file=args.file, date=args.date, archive_path=args.archive_path):
