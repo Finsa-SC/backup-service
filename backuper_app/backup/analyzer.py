@@ -43,6 +43,8 @@ class Analyzer:
         return mapping
 
     def show_statistic(self, file_statistic: dict[str, int]) -> None:
+        from backuper_app.utils import analyze_estimate_size, format_size
+
         logger.info("Starting dry run...")
 
         #Backup info
@@ -66,8 +68,8 @@ class Analyzer:
         for type_file, value in file_statistic.items():
             matched_file.append(f"\t{type_file:<12}: {value}")
 
-        estimated_size = self.analyze_estimate_size()
-        matched_file.append(f"\tEstimate size: {estimated_size}")
+        estimated_size = analyze_estimate_size(self.files)
+        matched_file.append(f"\tEstimate size: {format_size(estimated_size)}")
 
         logger.info("\n".join(matched_file))
 
