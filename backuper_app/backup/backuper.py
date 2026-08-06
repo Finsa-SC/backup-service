@@ -61,11 +61,7 @@ class Backuper:
         ]
 
 
-        # elif backup_list:
-        #     str_command.extend(backup_list)
-        # else:
-        #     from backuper_app.exception import FilterEmptyError
-        #     raise FilterEmptyError(f"No files matched the configured include patterns: {self.include}")
+        str_command.extend(backup_list)
 
         #Add manifest file
         temp_dir_path = create_manifest_data(
@@ -142,7 +138,16 @@ class Backuper:
             analyzer.analyze_statistic()
             exit(0)
         elif backup_list:
-            backup_path = self.compress(compression, backup_path=backup_path, )
+            backup_path = self.compress(
+                compression,
+                backup_path=backup_path,
+                backup_name=backup_name,
+                backup_list=backup_list
+            )
+        else:
+            from backuper_app.exception import FilterEmptyError
+            raise FilterEmptyError(f"No files matched the configured include patterns: {self.include}")
+
 
         logger.debug(f"Backup for {self.target_path.name} success with no error found.")
 
