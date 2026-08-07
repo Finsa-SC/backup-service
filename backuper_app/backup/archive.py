@@ -40,6 +40,10 @@ class Archive:
 
         return month_directory
 
+    @staticmethod
+    def get_backup_files(files: list[Path]) -> list[Path]:
+        return [file for file in files if ".sha256" in file.suffixes]
+
     def do_archive(self):
         archive_target = self._set_month_directory(self._set_year_directory())
 
@@ -52,3 +56,6 @@ class Archive:
                 self._delete_from_backup(old_backup=old)
 
             logger.info(f"Removed old backup: {old.name} (expired)")
+            backup_files = self.get_backup_files(self._expired_backups)
+            backup_count = len(backup_files)
+            logger.info(f"Backup rotation completed: {backup_count} backups retained.")
