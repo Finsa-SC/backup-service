@@ -47,8 +47,8 @@ class Archive:
             if self.archive_enabled:
                 logger.debug(f"Moving {old.name} into {self._archive_path}...")
                 self._move_into_archive(old_backup=old, archive_target=archive_target)
-                logger.info(f"{old.name} has been moved to {self._archive_path.name}")
             else:
                 logger.debug(f"Deleting {old.name} from {self._archive_path}")
                 self._delete_from_backup(old_backup=old)
-                logger.info(f"{old.name} has beed removed")
+
+            logger.info(f"Removed old backup: {old.name} (expired)")

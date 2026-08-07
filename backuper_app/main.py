@@ -114,6 +114,7 @@ class BackupService:
 
     @staticmethod
     def run_backup(config, dry_run: bool):
+        logger.info(f"Starting backup for {config.target.name}...")
         from backuper_app.utils.checksum import make_hash
 
         parent_path = config.target.parent
@@ -133,15 +134,15 @@ class BackupService:
             retention=config.keep_last
         )
 
-        logger.info(f"Creating backup for {config.target.name}...")
         backup_path = backuper.do_backup()
-        logger.info(f"Backup has been created: {config.target.name} -> {backup_path}")
+        logger.info(f"Backup created: {backup_path.name} {backup_path.lstat().st_size}")
 
         checksum_path = make_hash(backup_path)
-        logger.info(f"Checksum file has been created for {backup_path.name} as {checksum_path.name}")
+        logger.info(f"Checksum generated: {checksum_path.name}")
 
         #Check retention enabled
         if config.keep_last:
+            logger.info(f"Rotating old backups (keeping last {config.keep_last})...")
             backup_retention = Retention(
                 destination=config.destination,
                 backup_name=config.backup_name,
@@ -155,6 +156,7 @@ class BackupService:
                 archive_enabled=config.archive_enable,
             )
             backup_archive.do_archive()
+
 
     @staticmethod
     def run_restore(**kwargs):
@@ -189,9 +191,11 @@ def main():
 
         match args.command:
             case "backup":
-                logger.info("Starting backup service...")
-
                 config = backup_service.load_config(args)
+                logger.info(f"Starting backup service for {config.backup_name}")
+                logger.info(f"Source: {config.target}")
+                logger.info(f"Destination: {config.destination}")
+                logger.info(f"Compression: {config.compression}")
                 backup_service.run_backup(config, args.dry_run)
 
                 logger.info(f"Successfully backed up {config.backup_name}.")

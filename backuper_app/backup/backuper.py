@@ -51,9 +51,7 @@ class Backuper:
             backup_list: list[Path],
             temp_dir_path: Path,
             manifest_relative_path: Path,
-
     ) -> Path:
-
         str_command = [
             "tar",
             compression.compress_flag,
@@ -63,9 +61,7 @@ class Backuper:
             str(self.parent_path),
         ]
 
-
         str_command.extend(backup_list)
-
 
         manifest_command = [
             "-C",
@@ -93,9 +89,6 @@ class Backuper:
 
         if not self.destination_path.exists():
             raise FileNotFoundError(f"Destination path not found for {self.destination_path}")
-
-        # if is_enough_space()
-
 
         filter_engine = FilterEngine(
             target_path=self.target_path,
