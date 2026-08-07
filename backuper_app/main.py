@@ -1,9 +1,10 @@
 import argparse
+from datetime import datetime
 from pathlib import Path
 from backuper_app.backup import Backuper, Retention, Archive, Verify
 from backuper_app.backup.restore import Restore
 from backuper_app.config import Config
-from backuper_app.utils import get_logger
+from backuper_app.utils import get_logger, format_size
 from backuper_app.exception import BackuperError
 
 logger = get_logger(__name__)
@@ -135,7 +136,7 @@ class BackupService:
         )
 
         backup_path = backuper.do_backup()
-        logger.info(f"Backup created: {backup_path.name} {backup_path.lstat().st_size}")
+        logger.info(f"Backup created: {backup_path.name} {format_size(backup_path.lstat().st_size)}")
 
         checksum_path = make_hash(backup_path)
         logger.info(f"Checksum generated: {checksum_path.name}")
@@ -185,6 +186,7 @@ def _valid_input_archive(file: Path | None, date: str | None, archive_path: Path
 
 def main():
     try:
+        start_time = datetime.now()
         backup_service = BackupService()
 
         args =  backup_service.get_config()
@@ -197,8 +199,6 @@ def main():
                 logger.info(f"Destination: {config.destination}")
                 logger.info(f"Compression: {config.compression}")
                 backup_service.run_backup(config, args.dry_run)
-
-                logger.info(f"Successfully backed up {config.backup_name}.")
 
             case "restore":
                 if _valid_input_archive(file=args.file, date=args.date, archive_path=args.archive_path):
@@ -225,6 +225,9 @@ def main():
                         logger.info(f"Archive verification passed for {target}")
             case _:
                 raise ValueError(f"Invalid command {args.command}")
+
+        backup_time = datetime.now() - start_time
+        logger.info(f"Backup completed successfully in {backup_time.total_seconds():.2f} seconds.")
 
     except BackuperError as e:
         logger.warning(e)

@@ -41,21 +41,23 @@ class Archive:
         return month_directory
 
     @staticmethod
-    def get_backup_files(files: list[Path]) -> list[Path]:
-        return [file for file in files if ".sha256" in file.suffixes]
+    def is_checksum_file(file: Path) -> bool:
+        return ".sha256" in file.suffixes
 
     def do_archive(self):
         archive_target = self._set_month_directory(self._set_year_directory())
 
+        backup_removed: int = 0
         for old in self._expired_backups:
             if self.archive_enabled:
                 logger.debug(f"Moving {old.name} into {self._archive_path}...")
                 self._move_into_archive(old_backup=old, archive_target=archive_target)
             else:
-                logger.debug(f"Deleting {old.name} from {self._archive_path}")
+                logger.debug(f"Deleting {old.stem} from {self._archive_path}")
                 self._delete_from_backup(old_backup=old)
 
-            logger.info(f"Removed old backup: {old.name} (expired)")
-            backup_files = self.get_backup_files(self._expired_backups)
-            backup_count = len(backup_files)
-            logger.info(f"Backup rotation completed: {backup_count} backups retained.")
+            if not self.is_checksum_file(old):
+                logger.info(f"Removed old backup: {old.name} (expired)")
+                backup_removed += 1
+
+        logger.info(f"Backup rotation completed: {backup_removed} backups retained.")
