@@ -24,7 +24,8 @@ class FilterEngine:
                 link_file.add(file)
         return link_file
 
-    def do_filtering(self) -> list[Path]:
+    #Return final list of path to backup and filtered count
+    def do_filtering(self) -> tuple[list[Path], int]:
         filtered: list[Path] = []
 
         #Get base file
@@ -33,6 +34,7 @@ class FilterEngine:
         else:
             filtered.extend(self.target_path.rglob("*"))
 
+        filtered_count = len(filtered)
         logger.debug(f"Full file: {filtered}")
 
         #Filter exclude
@@ -49,7 +51,7 @@ class FilterEngine:
                     filtered.remove(file)
                     logger.debug(f"Removed: {file}")
 
-        return filtered
+        return filtered, (filtered_count - len(filtered))
 
 if __name__ == "__main__":
     engine = FilterEngine(Path("/devops_learn"), include=None, exclude=None, link_mode="ignore")

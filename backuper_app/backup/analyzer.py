@@ -9,6 +9,7 @@ class Analyzer:
             target_path: Path,
             destination: Path,
             files: list[Path],
+            backup_total: int,
             compression_type: str,
             link_mode: str,
             archive_enabled: bool,
@@ -19,6 +20,7 @@ class Analyzer:
         self.target = target_path
         self.destination = destination
         self.files = files
+        self.backup_total = backup_total
         self.compression = compression_type
         self.link_mode = link_mode
         self.archive_enabled = archive_enabled
@@ -67,6 +69,7 @@ class Analyzer:
         matched_file = ["\n\tStatistics"]
         for type_file, value in file_statistic.items():
             matched_file.append(f"\t{type_file:<12}: {value}")
+        matched_file.append(f"\t{'Filtered':<12}: {self.backup_total}")
 
         estimated_size = analyze_estimate_size(self.files)
         matched_file.append(f"\tEstimate size: {format_size(estimated_size)}")

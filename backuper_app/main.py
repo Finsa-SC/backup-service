@@ -115,7 +115,6 @@ class BackupService:
 
     @staticmethod
     def run_backup(config, dry_run: bool):
-        logger.info(f"Starting backup for {config.target.name}...")
         from backuper_app.utils.checksum import make_hash
 
         parent_path = config.target.parent
@@ -194,10 +193,12 @@ def main():
         match args.command:
             case "backup":
                 config = backup_service.load_config(args)
-                logger.info(f"Starting backup service for {config.backup_name}")
-                logger.info(f"Source: {config.target}")
-                logger.info(f"Destination: {config.destination}")
-                logger.info(f"Compression: {config.compression}")
+
+                if not args.dry_run:
+                    logger.info(f"Starting backup service for {config.backup_name}")
+                    logger.info(f"Source: {config.target}")
+                    logger.info(f"Destination: {config.destination}")
+                    logger.info(f"Compression: {config.compression}")
                 backup_service.run_backup(config, args.dry_run)
 
             case "restore":

@@ -96,7 +96,7 @@ class Backuper:
             exclude=self.exclude,
             link_mode=self.link_mode,
         )
-        backup_list = filter_engine.do_filtering()
+        backup_list, backup_total = filter_engine.do_filtering()
 
         if self.dry_run:
             from .analyzer import Analyzer
@@ -105,6 +105,7 @@ class Backuper:
                 self.target_path,
                 destination=self.destination_path,
                 files=backup_list,
+                backup_total=backup_total,
                 compression_type=self.compression_type,
                 link_mode=self.link_mode,
                 include=self.include,
