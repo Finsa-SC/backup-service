@@ -103,12 +103,12 @@ class BackupService:
             help="Path to your archive directory to find file to be verify",
         )
 
+        ### Init
         init_mode = subparser.add_parser(
             name="init",
             help="Create an initial configuration file",
             description="Create an initial configuration file from the default template.",
         )
-
         init_mode.add_argument(
             "-t",
             "--target",
@@ -116,7 +116,6 @@ class BackupService:
             default=None,
             help="Path to the backup target directory.",
         )
-
         init_mode.add_argument(
             "-d",
             "--destination",
@@ -124,7 +123,6 @@ class BackupService:
             default=None,
             help="Path to the backup destination directory.",
         )
-
         init_mode.add_argument(
             "-r",
             "--retention",
@@ -136,7 +134,7 @@ class BackupService:
             "-c",
             "--compression",
             choices=["gzip", "zstd"],
-            default=None,
+            default="zstd",
             help="Compression method.",
         )
 
@@ -144,10 +142,10 @@ class BackupService:
             "-l",
             "--link-mode",
             choices=["ignore", "follow", "preserve"],
-            default=None,
+            default="preserve",
             help="How symbolic links are handled.",
         )
-        
+
         return parser.parse_args()
 
     @staticmethod
