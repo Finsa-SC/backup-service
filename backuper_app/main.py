@@ -30,13 +30,12 @@ class BackupService:
             required=True,
         )
 
-        #Backup Mode
+        ### Backup Mode
         backup_mode = subparser.add_parser(
             name="backup",
             help="Create new backup",
             description="Create new backup",
         )
-
         backup_mode.add_argument(
             "--config",
             required=True,
@@ -50,20 +49,18 @@ class BackupService:
             help="Trial without actually taking action"
         )
 
-        #Restore Mode
+        ### Restore Mode
         restore_mode = subparser.add_parser(
             name="restore",
             help="Extract archive backup",
             description="Extract archive backup",
         )
-
         restore_mode.add_argument(
             "--file",
             type=Path,
             default=None,
             help="File path you want to restore",
         )
-
         restore_mode.add_argument(
             "--date",
             type=str,
@@ -81,6 +78,7 @@ class BackupService:
             help="Path to your archive directory to find file to be extract",
         )
 
+        ### Verify
         verify_mode = subparser.add_parser(
             name="verify",
             help="verify backup data with checksum",
@@ -105,6 +103,51 @@ class BackupService:
             help="Path to your archive directory to find file to be verify",
         )
 
+        init_mode = subparser.add_parser(
+            name="init",
+            help="Create an initial configuration file",
+            description="Create an initial configuration file from the default template.",
+        )
+
+        init_mode.add_argument(
+            "-t",
+            "--target",
+            type=Path,
+            default=None,
+            help="Path to the backup target directory.",
+        )
+
+        init_mode.add_argument(
+            "-d",
+            "--destination",
+            type=Path,
+            default=None,
+            help="Path to the backup destination directory.",
+        )
+
+        init_mode.add_argument(
+            "-r",
+            "--retention",
+            type=int,
+            default=None,
+            help="Number of backups to retain.",
+        )
+        init_mode.add_argument(
+            "-c",
+            "--compression",
+            choices=["gzip", "zstd"],
+            default=None,
+            help="Compression method.",
+        )
+
+        init_mode.add_argument(
+            "-l",
+            "--link-mode",
+            choices=["ignore", "follow", "preserve"],
+            default=None,
+            help="How symbolic links are handled.",
+        )
+        
         return parser.parse_args()
 
     @staticmethod
