@@ -110,6 +110,13 @@ class BackupService:
             description="Create an initial configuration file from the default template.",
         )
         init_mode.add_argument(
+            "config",
+            type=Path,
+            nargs="?",
+            default=Path("/etc/backuper/config.toml"),
+            help="Path to the configuration file (default: /etc/backuper/config.toml).",
+        )
+        init_mode.add_argument(
             "-t",
             "--target",
             type=Path,
