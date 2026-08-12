@@ -281,17 +281,21 @@ def main():
                     args.compression,
                     args.link_mode,
                 )
-                init.make_init()
+                config_path = init.make_init()
+                logger.info(f"Initial config has been created: {config_path}")
+                logger.info("Edit the file before running `backuper backup`.")
             case _:
                 raise ValueError(f"Invalid command {args.command}")
 
         backup_time = datetime.now() - start_time
-        logger.info(f"Backup completed successfully in {backup_time.total_seconds():.2f} seconds.")
+        logger.info(f"Backuper completed successfully in {backup_time.total_seconds():.2f} seconds.")
 
     except BackuperError as e:
         logger.error(e)
+        raise SystemExit(1)
     except Exception as e:
         logger.exception(e)
+        raise SystemExit(1)
 
 if __name__ == "__main__":
     main()
