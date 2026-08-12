@@ -17,12 +17,12 @@ class Initializer:
         self.compression = compression
         self.link_mode = link_mode
 
-    def set_init(self):
+    def _set_init(self):
         return f"""
 [backup]
 target = {self.target}
 destination = {self.destination}
-backup_name = 
+backup_name = \"\"
 compression = {self.compression}
 
 link_mode = {self.link_mode} #follow/preserve/ignore
@@ -46,4 +46,4 @@ path =
 
     def make_init(self):
         with self.config_path.open('w+') as file:
-            file.write(self.set_init())
+            file.write(self._set_init())

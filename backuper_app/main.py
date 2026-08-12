@@ -205,7 +205,6 @@ class BackupService:
             )
             backup_archive.do_archive()
 
-
     @staticmethod
     def run_restore(**kwargs):
         from backuper_app.utils.checksum import validate_checksum
@@ -272,6 +271,17 @@ def main():
                     is_valid = verify.do_verify()
                     if is_valid:
                         logger.info(f"Archive verification passed for {target}")
+            case "init":
+                from backuper_app.backup.initializer import Initializer
+                init = Initializer(
+                    args.config,
+                    args.target,
+                    args.destination,
+                    args.retention,
+                    args.compression,
+                    args.link_mode,
+                )
+                init.make_init()
             case _:
                 raise ValueError(f"Invalid command {args.command}")
 
