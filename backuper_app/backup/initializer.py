@@ -44,6 +44,11 @@ enabled = false
 path =
 """
 
-    def make_init(self):
+    def make_init(self) -> Path:
         with self.config_path.open('w+') as file:
             file.write(self._set_init())
+
+        if self.config_path.is_file(follow_symlinks=True):
+            return self.config_path
+        else:
+            raise FileNotFoundError(f"File {self.config_path} not found")
