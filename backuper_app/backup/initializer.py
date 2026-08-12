@@ -19,7 +19,7 @@ class Initializer:
 
     @staticmethod
     def _toml_value(value) -> str:
-        if isinstance(value, str):
+        if isinstance(value, str|Path):
             return f'"{value}"'
         if isinstance(value, bool):
             return str(value)
