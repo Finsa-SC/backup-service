@@ -17,15 +17,21 @@ class Initializer:
         self.compression = compression
         self.link_mode = link_mode
 
+    @staticmethod
+    def _optional_key(key: str | None, hint: str, value) -> str:
+        if value is not None:
+            return f"{key} = {value}"
+        return f"# {key} = {hint if hint.strip() else '""'}"
+
     def _set_init(self):
         return f"""
 [backup]
-target = {self.target}
-destination = {self.destination}
-backup_name = \"\"
-compression = {self.compression}
+{self._optional_key("target", hint='', value=self.target)}
+{self._optional_key("destination", hint='', value=self.destination)}
+#backup_name = ""
+compression = "{self.compression}"
 
-link_mode = {self.link_mode} #follow/preserve/ignore
+link_mode = "{self.link_mode}" # follow/preserve/ignore
 
 [filter]
 include = []
@@ -37,11 +43,11 @@ exclude = [
 ]
 
 [retention]
-keep_last = 
+{self._optional_key("keep_last", hint="7", value=self.retention)}
 
 [archive]
-enabled = false
-path =
+#enabled = false
+#path = ""
 """
 
     def make_init(self) -> Path:
