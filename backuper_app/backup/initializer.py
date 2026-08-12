@@ -18,20 +18,38 @@ class Initializer:
         self.link_mode = link_mode
 
     @staticmethod
-    def _optional_key(key: str | None, hint: str, value) -> str:
-        if value is not None:
-            return f"{key} = {value}"
-        return f"# {key} = {hint if hint.strip() else '""'}"
+    def _toml_value(value) -> str:
+        if isinstance(value, str):
+            return f'"{value}"'
+        if isinstance(value, bool):
+            return str(value)
+        if isinstance(value, int):
+            return str(value)
+        return '""'
+
+    def _optional_key(
+            self,
+            key: str | None,
+            hint,
+            value,
+            required: bool = False
+    ) -> str:
+        if value is None:
+            value = "" if required else hint
+            prefix = "" if required else "# "
+        else:
+            prefix = ""
+
+        return f"{prefix}{key} = {self._toml_value(value)}"
 
     def _set_init(self):
         return f"""
 [backup]
-{self._optional_key("target", hint='', value=self.target)}
-{self._optional_key("destination", hint='', value=self.destination)}
-#backup_name = ""
-compression = "{self.compression}"
-
-link_mode = "{self.link_mode}" # follow/preserve/ignore
+{self._optional_key("target",      hint='',         value=self.target,         required=True)}
+{self._optional_key("destination", hint='',         value=self.destination,    required=True)}
+{self._optional_key("backup_name", hint='',         value="")}
+{self._optional_key("compression", hint="zstd",     value=self.compression)}
+{self._optional_key("link_mode",   hint="preserve", value=self.link_mode)} # follow/preserve/ignore
 
 [filter]
 include = []
@@ -43,11 +61,11 @@ exclude = [
 ]
 
 [retention]
-{self._optional_key("keep_last", hint="7", value=self.retention)}
+{self._optional_key("keep_last", hint=7, value=self.retention)}
 
 [archive]
-#enabled = false
-#path = ""
+enabled = false
+# path = ""
 """
 
     def make_init(self) -> Path:
