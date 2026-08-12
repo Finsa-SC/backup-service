@@ -289,9 +289,9 @@ def main():
         logger.info(f"Backup completed successfully in {backup_time.total_seconds():.2f} seconds.")
 
     except BackuperError as e:
-        logger.warning(e)
-    except Exception as e:
         logger.error(e)
+    except Exception as e:
+        logger.exception(e)
 
 if __name__ == "__main__":
     main()

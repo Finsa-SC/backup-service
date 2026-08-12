@@ -2,6 +2,7 @@ import tomllib
 from pathlib import Path
 from dataclasses import dataclass
 from backuper_app.utils import get_logger
+from backuper_app.exception import BackuperError
 
 logger = get_logger(__name__)
 
@@ -24,8 +25,13 @@ class Config:
 
     def _get_config(self):
         logger.debug(f"Reading config from {self._config_path}")
-        with self._config_path.open('rb') as file:
-            return tomllib.load(file)
+        try:
+            with self._config_path.open('rb') as file:
+                return tomllib.load(file)
+        except tomllib.TOMLDecodeError as e:
+            raise BackuperError (
+                f"Invalid TOML configuration in {self._config_path}: {e}"
+            )
 
     @staticmethod
     def _set_backup_name(backup_name: str | None, target_backup: Path):
