@@ -13,6 +13,7 @@ class Analyzer:
             compression_type: str,
             link_mode: str,
             archive_enabled: bool,
+            archive_path: Path|None,
             include: list[str],
             exclude: list[str],
             retention: int | None,
@@ -24,6 +25,7 @@ class Analyzer:
         self.compression = compression_type
         self.link_mode = link_mode
         self.archive_enabled = archive_enabled
+        self.archive_path = archive_path
         self.include = include
         self.exclude = exclude
         self.retention = retention
@@ -52,8 +54,8 @@ class Analyzer:
         #Backup info
         logger.info(f"""
         Backup
-        Target      : {self.target}
-        Destination : {self.destination}
+        Target      : {self.target if self.target.exists() else '-'}
+        Destination : {self.destination if self.destination.exists() else '-'}
         Compression : {self.compression}
         Link mode   : {self.link_mode}
         """)
@@ -82,7 +84,8 @@ class Analyzer:
         Manifest    : Yes
         Checksum    : Yes
         Archive     : {self.archive_enabled}
-        Keep last   : {self.retention}
+        Archive Path: {self.archive_path if self.archive_enabled and self.archive_path.is_dir() else "-"}
+        Keep last   : {self.retention if self.retention else '-'}
         """)
 
         logger.info("""

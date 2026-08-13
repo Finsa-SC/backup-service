@@ -113,7 +113,7 @@ class BackupService:
             "config",
             type=Path,
             nargs="?",
-            default=Path("/etc/backuper/config.toml"),
+            default=None,
             help="Path to the configuration file (default: /etc/backuper/config.toml).",
         )
         init_mode.add_argument(
