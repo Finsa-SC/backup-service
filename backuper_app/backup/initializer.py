@@ -21,13 +21,21 @@ class Initializer:
     def _resolve_default_name(self) -> Path:
         if not self.config_path:
             file_exists = list(self.default_file.rglob(f"config*.toml"))
-            file_count = len(file_exists)
+            file_exists = sorted(file_exists)
+            file_increment = [file for file in file_exists if '-' in str(file)]
 
-            # Make increment name if file already exists
-            if file_count > 0:
-                return self.default_file / f"config-{file_count + 1}.toml"
-            else:
+            if not Path(self.default_file / "config.toml").exists():
                 return self.default_file / "config.toml"
+
+            increment = 2
+            for i, file in enumerate(file_increment, start=increment):
+                if file.name != f"config-{i}.toml":
+                    increment = i
+                    break
+                else:
+                    increment += 1
+            return self.default_file / f"config-{increment}.toml"
+
         return self.config_path
 
     @staticmethod
