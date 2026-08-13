@@ -63,6 +63,7 @@ class Backuper:
 
         str_command.extend(backup_list)
 
+        # Insert manifest into compression command
         manifest_command = [
             "-C",
             str(temp_dir_path),
@@ -115,6 +116,8 @@ class Backuper:
             )
             analyzer.analyze_statistic()
             exit(0)
+
+        # Do normal backup if --dry-run off
         elif backup_list:
             required_space = analyze_estimate_size(files=backup_list)
             space_available = get_space_info(self.target_path)['space_available']
@@ -143,6 +146,8 @@ class Backuper:
                 link_mode=self.link_mode,
             )
 
+            # resolve manifest relative path to store into compression
+            # because if i don't do that manifest path will save as absolute path
             manifest_relative_path = Path(temp_dir_path / ".manifest").relative_to(temp_dir_path)
 
             ###Compress backup
@@ -158,6 +163,7 @@ class Backuper:
             import shutil
             shutil.rmtree(temp_dir_path)
         else:
+            # Raise exception if no file match from filter engine, only active when use include config
             from backuper_app.exception import FilterEmptyError
             raise FilterEmptyError(f"No files matched the configured include patterns: {self.include}")
 
