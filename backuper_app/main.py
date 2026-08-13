@@ -1,6 +1,7 @@
 import argparse
 from datetime import datetime
 from pathlib import Path
+from importlib.metadata import version
 from backuper_app.backup import Backuper, Retention, Archive, Verify
 from backuper_app.backup.restore import Restore
 from backuper_app.config import Config
@@ -8,6 +9,7 @@ from backuper_app.utils import get_logger, format_size
 from backuper_app.exception import BackuperError
 
 logger = get_logger(__name__)
+VERSION = version("file-backuper")
 
 class BackupService:
     def __enter__(self):
@@ -23,6 +25,13 @@ class BackupService:
         parser = argparse.ArgumentParser(
             prog="backuper",
             description="Backup Service",
+        )
+
+        parser.add_argument(
+            "-v",
+            "--version",
+            action="version",
+            version=f"%(prog)s {VERSION}"
         )
 
         subparser = parser.add_subparsers(
