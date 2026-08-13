@@ -47,12 +47,27 @@ class Config:
         archive = config["archive"]
         config_filter = config["filter"]
 
-        target_backup = Path(backup["target"])
+        def _validate_path(key: str, path) -> Path:
+            if not path.strip():
+                raise BackuperError(f"{key} path is not set, make sure the target path is configured in your config")
+
+            path = Path(path)
+            if not path.exists():
+                raise BackuperError(f"{key} path not found: {path}")
+
+            return path
+
+        target_backup = backup.get('target', '')
+        target_backup = _validate_path('target', target_backup)
+
+        destination_backup = backup.get('destination', '')
+        destination_backup = _validate_path("destination", destination_backup)
+
         backup_name = self._set_backup_name(backup.get("backup_name", None), target_backup)
 
         return BackupConfig(
             target=target_backup,
-            destination=Path(backup["destination"]),
+            destination=destination_backup,
             backup_name=backup_name,
             include=config_filter.get("include", None),
             exclude=config_filter.get("exclude", None),

@@ -111,7 +111,8 @@ class Backuper:
                 link_mode=self.link_mode,
                 include=self.include,
                 exclude=self.exclude,
-                archive_enabled=self.archive_enabled is not None and self.archive_path is not None,
+                archive_enabled=self.archive_enabled,
+                archive_path=self.archive_path,
                 retention=self.retention,
             )
             analyzer.analyze_statistic()
