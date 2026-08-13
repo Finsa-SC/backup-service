@@ -85,7 +85,7 @@ class Analyzer:
         Checksum    : Yes
         Archive     : {self.archive_enabled}
         Archive Path: {self.archive_path if self.archive_enabled and self.archive_path.is_dir() else "-"}
-        Keep last   : {self.retention}
+        Keep last   : {self.retention if self.retention else '-'}
         """)
 
         logger.info("""
