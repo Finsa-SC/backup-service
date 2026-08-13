@@ -59,6 +59,7 @@ class Config:
             keep_last=retention.get("keep_last", None),
             compression=backup.get("compression", None),
             archive_enable=archive.get("enabled", False),
-            archive_path=Path(archive.get("path", None)),
+            #Optional path archive use quote instead of None
+            archive_path=Path(archive.get("path", "")),
             link_mode=backup["link_mode"]
         )
