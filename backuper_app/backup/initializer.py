@@ -16,10 +16,29 @@ class Initializer:
         self.retention = retention
         self.compression = compression
         self.link_mode = link_mode
+        self.default_file = Path("/etc/backuper/")
+
+    def _resolve_default_name(self) -> Path:
+        if not self.config_path:
+            if not Path(self.default_file / "config.toml").exists():
+                return self.default_file / "config.toml"
+
+            file_exists = sorted(self.default_file.rglob(f"config-*.toml"))
+
+            increment = 2
+            for i, file in enumerate(file_exists, start=increment):
+                if file.name != f"config-{i}.toml":
+                    increment = i
+                    break
+                else:
+                    increment += 1
+            return self.default_file / f"config-{increment}.toml"
+
+        return self.config_path
 
     @staticmethod
     def _toml_value(value) -> str:
-        if isinstance(value, str):
+        if isinstance(value, str|Path):
             return f'"{value}"'
         if isinstance(value, bool):
             return str(value)
@@ -69,10 +88,8 @@ enabled = false
 """
 
     def make_init(self) -> Path:
-        with self.config_path.open('w+') as file:
+        config_file = self._resolve_default_name()
+        with config_file.open('w+') as file:
             file.write(self._set_init())
 
-        if self.config_path.is_file(follow_symlinks=True):
-            return self.config_path
-        else:
-            raise FileNotFoundError(f"File {self.config_path} not found")
+        return config_file
