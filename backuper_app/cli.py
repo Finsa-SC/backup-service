@@ -220,9 +220,9 @@ def run_backup(request):
 def run_restore(request):
     from backuper_app.utils.checksum import validate_checksum
 
-    target = request.file or request.date
+    target = request.file_path or request.date
     logger.info(f"Verifying {target}")
-    file_path = request.file
+    file_path = request.file_path
     date = request.date
     destination = request.destination
     archive_path = request.archive_path
