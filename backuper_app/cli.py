@@ -244,7 +244,7 @@ def run_restore(request):
 
 
 def run_verify(request):
-    if _valid_input_archive(file=request.file, date=request.date, archive_path=request.archive_path):
+    if _valid_input_archive(file=request.file_path, date=request.date, archive_path=request.archive_path):
         target = request.file_path or request.date
         verify = Verify(
             file_path=request.file_path,

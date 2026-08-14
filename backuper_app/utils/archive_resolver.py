@@ -1,16 +1,18 @@
 from pathlib import Path
 from datetime import datetime
 
+DATE_FORMAT = "%Y-%m-%d"
+
 def is_valid_date(date: str):
     try:
-        datetime.strptime(date,"%Y-%m-%d")
+        datetime.strptime(date, DATE_FORMAT)
         return True
     except ValueError:
         return False
 
 def get_archive_by_date(archive_path: Path, date: str) -> list[Path]:
     if not is_valid_date(date):
-        raise ValueError(f"Invalid date value: got {date}")
+        raise ValueError(f"Invalid date value: got {date}, expected format {DATE_FORMAT}")
 
     date = date.replace('-', '')
     match_date = list(
