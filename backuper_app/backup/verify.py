@@ -1,5 +1,6 @@
 from pathlib import Path
 from backuper_app.utils import get_archive_by_date, get_archive_by_path, validate_checksum, is_checksum_file
+from exception import InvalidArgumetError
 
 
 class Verify:
@@ -17,7 +18,7 @@ class Verify:
             backup_files = [file for file in match_archives if is_checksum_file(file)]
             archive_file = backup_files[-1]
         else:
-            raise ValueError("Missing argument for Verify command")
+            raise InvalidArgumetError("Missing argument for Verify command")
 
         #Validate checksum and raise error if any problem occured
         validate_checksum(archive_file)

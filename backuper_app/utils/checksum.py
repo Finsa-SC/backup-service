@@ -2,6 +2,9 @@ from backuper_app.exception import ChecksumNotFoundError, ChecksumMismatchError
 from pathlib import Path
 import hashlib
 
+from exception import BackuperError
+
+
 def make_file_checksum(path_file: Path, hashed_file: str) -> Path:
     checksum_path =  path_file.with_suffix(path_file.suffix + ".sha256")
 
@@ -34,7 +37,7 @@ def make_hash(file_path: Path):
 
             return make_file_checksum(file_path, hashed_file)
     else:
-        raise FileNotFoundError(f"{file_path} not exist or it's not a file")
+        raise BackuperError(f"{file_path} not exist or it's not a file")
 
 def is_checksum_file(path: Path) -> bool:
     return ".sha256" in path.suffixes

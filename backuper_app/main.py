@@ -3,6 +3,7 @@ from backuper_app.utils import get_logger
 from backuper_app.exception import BackuperError
 from backuper_app.cli import run_backup, run_restore, run_verify, get_config, run_init
 from backuper_app.dto import BackupRequest, RestoreRequest, VerifyRequest, InitRequest
+from exception import InvalidArgumetError
 
 logger = get_logger(__name__)
 
@@ -46,7 +47,7 @@ def main():
                 )
                 run_init(request)
             case _:
-                raise ValueError(f"Invalid command {argv.command}")
+                raise InvalidArgumetError(f"Invalid command {argv.command}")
 
         backup_time = datetime.now() - start_time
         logger.info(f"Backuper completed successfully in {backup_time.total_seconds():.2f} seconds.")

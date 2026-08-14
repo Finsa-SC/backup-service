@@ -12,3 +12,6 @@ class FilterEmptyError(BackuperError):
 
 class NotEnoughDiskSpaceError(BackuperError):
     ...
+
+class InvalidArgumetError(BackuperError):
+    ...

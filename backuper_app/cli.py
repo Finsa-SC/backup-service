@@ -4,6 +4,7 @@ from pathlib import Path
 from backuper_app.utils import get_logger, format_size
 from backuper_app.config import Config
 from backuper_app.backup import Retention, Archive, Backuper, Restore, Verify, Initializer
+from backuper_app.exception import InvalidArgumetError
 
 logger = get_logger(__name__)
 VERSION = version("file-backuper")
@@ -159,10 +160,10 @@ def load_config(argsv):
 
 def _valid_input_archive(file: Path | None, date: str | None, archive_path: Path | None):
     if file and date:
-        raise ValueError("Unexpected argument, choose one format(file/date)")
+        raise InvalidArgumetError("Unexpected argument, choose one format(file/date)")
 
     if date and not archive_path:
-        raise ValueError("Missing --archive-path flag to use --date")
+        raise InvalidArgumetError("Missing --archive-path flag to use --date")
 
     return True
 
@@ -244,7 +245,7 @@ def run_restore(request):
 
 
 def run_verify(request):
-    if _valid_input_archive(file=request.file, date=request.date, archive_path=request.archive_path):
+    if _valid_input_archive(file=request.file_path, date=request.date, archive_path=request.archive_path):
         target = request.file_path or request.date
         verify = Verify(
             file_path=request.file_path,
