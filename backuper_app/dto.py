@@ -26,3 +26,4 @@ class InitRequest:
     retention: int
     compression: str
     link_mode: str
+    archive_path: Path | None

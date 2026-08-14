@@ -43,6 +43,7 @@ def main():
                     retention=argv.retention,
                     compression=argv.compression,
                     link_mode=argv.link_mode,
+                    archive_path=argv.archive_path,
                 )
                 run_init(request)
             case _:

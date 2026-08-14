@@ -9,6 +9,7 @@ class Initializer:
             retention: int|None,
             compression: str,
             link_mode: str,
+            archive_path: Path,
     ):
         self.config_path = config_path
         self.target = target
@@ -17,6 +18,7 @@ class Initializer:
         self.compression = compression
         self.link_mode = link_mode
         self.default_file = Path("/etc/backuper/")
+        self.archive_path = archive_path
 
     def _resolve_default_name(self) -> Path:
         if not self.config_path:
@@ -83,8 +85,8 @@ exclude = [
 {self._optional_key("keep_last", hint=7, value=self.retention)}
 
 [archive]
-enabled = false
-# path = ""
+enabled = {'true' if self.archive_path else 'false'}
+{self._optional_key("path", hint='', value=self.archive_path)}
 """
 
     def make_init(self) -> Path:

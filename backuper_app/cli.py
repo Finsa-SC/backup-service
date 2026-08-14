@@ -141,13 +141,18 @@ def get_config():
         default="zstd",
         help="Compression method.",
     )
-
     init_mode.add_argument(
         "-l",
         "--link-mode",
         choices=["ignore", "follow", "preserve"],
         default="preserve",
         help="How symbolic links are handled.",
+    )
+    init_mode.add_argument(
+        "-a",
+        "--archive-path",
+        default=None,
+        help="Path to archive backup",
     )
 
     return parser.parse_args()
@@ -274,6 +279,7 @@ def run_init(request):
         request.retention,
         request.compression,
         request.link_mode,
+        request.archive_path,
     )
 
     config_path = init.make_init()
