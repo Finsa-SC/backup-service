@@ -4,7 +4,7 @@ from pathlib import Path
 from backuper_app.utils import get_logger, format_size
 from backuper_app.config import Config
 from backuper_app.backup import Retention, Archive, Backuper, Restore, Verify, Initializer
-from backuper_app.exception import InvalidArgumetError
+from backuper_app.exception import InvalidArgumetError, ConfigurationError
 
 logger = get_logger(__name__)
 VERSION = version("file-backuper")
@@ -167,16 +167,24 @@ def _valid_input_archive(file: Path | None, date: str | None, archive_path: Path
 
     return True
 
+def _validate_archive(archive_path: Path|None, archive_enable: bool):
+    if not archive_enable:
+        raise ConfigurationError(f"Keep last active but archive is {archive_enable}")
+    if archive_enable and not archive_path:
+        raise ConfigurationError(f"Archive is enabled but archive path is not set")
+
 def run_backup(request):
     from backuper_app.utils.checksum import make_hash
 
     config = load_config(get_config())
 
-    if not request.dry_run:
-        logger.info(f"Starting backup service for {config.backup_name}")
-        logger.info(f"Source: {config.target}")
-        logger.info(f"Destination: {config.destination}")
-        logger.info(f"Compression: {config.compression}")
+    _validate_archive(config.archive_path, config.archive_enable)
+
+    # if not request.dry_run:
+    logger.info(f"Starting backup service for {config.backup_name}")
+    logger.info(f"Source: {config.target}")
+    logger.info(f"Destination: {config.destination}")
+    logger.info(f"Compression: {config.compression}")
 
     parent_path = config.target.parent
 
@@ -203,7 +211,6 @@ def run_backup(request):
 
     #Check retention enabled
     if config.keep_last:
-        logger.info(f"Rotating old backups (keeping last {config.keep_last})...")
         backup_retention = Retention(
             destination=config.destination,
             backup_name=config.backup_name,
@@ -211,12 +218,15 @@ def run_backup(request):
         )
         should_delete = backup_retention.do_retention()
 
-        backup_archive = Archive(
-            expired_backups=should_delete,
-            archive_path=config.archive_path,
-            archive_enabled=config.archive_enable,
-        )
-        backup_archive.do_archive()
+        if should_delete:
+            logger.info(f"Rotating old backups (keeping last {config.keep_last})...")
+
+            backup_archive = Archive(
+                expired_backups=should_delete,
+                archive_path=config.archive_path,
+                archive_enabled=config.archive_enable,
+            )
+            backup_archive.do_archive()
 
 def run_restore(request):
     from backuper_app.utils.checksum import validate_checksum

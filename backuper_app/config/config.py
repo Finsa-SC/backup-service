@@ -2,7 +2,7 @@ import tomllib
 from pathlib import Path
 from dataclasses import dataclass
 from backuper_app.utils import get_logger
-from backuper_app.exception import BackuperError
+from backuper_app.exception import BackuperError, ConfigurationError
 
 logger = get_logger(__name__)
 
@@ -29,7 +29,7 @@ class Config:
             with self._config_path.open('rb') as file:
                 return tomllib.load(file)
         except tomllib.TOMLDecodeError as e:
-            raise BackuperError (
+            raise ConfigurationError (
                 f"Invalid TOML configuration in {self._config_path}: {e}"
             )
 
@@ -49,7 +49,7 @@ class Config:
 
         def _validate_path(key: str, path) -> Path:
             if not path.strip():
-                raise BackuperError(f"{key} path is not set, make sure the target path is configured in your config")
+                raise ConfigurationError(f"{key} path is not set, make sure the target path is configured in your config")
 
             path = Path(path)
             if not path.exists():
@@ -63,6 +63,9 @@ class Config:
         destination_backup = backup.get('destination', '')
         destination_backup = _validate_path("destination", destination_backup)
 
+        archive_backup = archive.get('path', '')
+        archive_backup = _validate_path("Archive", archive_backup)
+
         backup_name = self._set_backup_name(backup.get("backup_name", None), target_backup)
 
         return BackupConfig(
@@ -75,6 +78,6 @@ class Config:
             compression=backup.get("compression", None),
             archive_enable=archive.get("enabled", False),
             #Optional path archive use quote instead of None
-            archive_path=Path(archive.get("path", "")),
+            archive_path=archive_backup,
             link_mode=backup["link_mode"]
         )

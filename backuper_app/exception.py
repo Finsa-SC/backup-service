@@ -15,3 +15,6 @@ class NotEnoughDiskSpaceError(BackuperError):
 
 class InvalidArgumetError(BackuperError):
     ...
+
+class ConfigurationError(BackuperError):
+    ...
