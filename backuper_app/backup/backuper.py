@@ -2,6 +2,7 @@ import subprocess, datetime
 from pathlib import Path
 from backuper_app.utils import get_logger, not_enough_space, analyze_estimate_size, get_space_info, format_size
 from backuper_app.exception import NotEnoughDiskSpaceError
+from exception import BackuperError
 from .filter_engine import FilterEngine
 from .compression import resolve_compression_from_config
 from .manifest import create_manifest_data
@@ -38,7 +39,7 @@ class Backuper:
         self.retention = retention
 
         if not self.target_path.is_relative_to(self.parent_path):
-            raise ValueError(f"Mismatch target path and parent path: parent={self.parent_path} target={self.target_path}")
+            raise BackuperError(f"Mismatch target path and parent path: parent={self.parent_path} target={self.target_path}")
 
     @staticmethod
     def set_backup_name(backup_name: str) -> str:
@@ -86,10 +87,10 @@ class Backuper:
     def do_backup(self) -> Path:
         #Validate path
         if not self.target_path.exists():
-            raise FileNotFoundError(f"Target path not found for {self.target_path}")
+            raise BackuperError(f"Target path not found for {self.target_path}")
 
         if not self.destination_path.exists():
-            raise FileNotFoundError(f"Destination path not found for {self.destination_path}")
+            raise BackuperError(f"Destination path not found for {self.destination_path}")
 
         filter_engine = FilterEngine(
             target_path=self.target_path,
