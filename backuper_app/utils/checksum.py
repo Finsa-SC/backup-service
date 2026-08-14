@@ -1,9 +1,6 @@
-from backuper_app.exception import ChecksumNotFoundError, ChecksumMismatchError
+from backuper_app.exception import ChecksumNotFoundError, ChecksumMismatchError, BackuperError
 from pathlib import Path
 import hashlib
-
-from exception import BackuperError
-
 
 def make_file_checksum(path_file: Path, hashed_file: str) -> Path:
     checksum_path =  path_file.with_suffix(path_file.suffix + ".sha256")

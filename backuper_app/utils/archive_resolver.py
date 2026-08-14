@@ -1,7 +1,6 @@
 from pathlib import Path
 from datetime import datetime
-from backuper_app.exception import InvalidArgumetError
-from exception import BackuperError
+from backuper_app.exception import InvalidArgumetError, BackuperError
 
 DATE_FORMAT = "%Y-%m-%d"
 

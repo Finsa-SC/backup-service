@@ -1,6 +1,6 @@
 from pathlib import Path
 from backuper_app.utils import get_archive_by_date, get_archive_by_path, validate_checksum, is_checksum_file
-from exception import InvalidArgumetError
+from backuper_app.exception import InvalidArgumetError
 
 
 class Verify:
