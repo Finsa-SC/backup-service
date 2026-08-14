@@ -17,6 +17,7 @@ def main():
                     dry_run=argv.dry_run,
                 )
                 run_backup(request)
+
             case "restore":
                 request = RestoreRequest(
                     file_path=argv.file,
@@ -33,6 +34,7 @@ def main():
                     archive_path=argv.archive_path,
                 )
                 run_verify(request)
+
             case "init":
                 request = InitRequest(
                     config=argv.config,
