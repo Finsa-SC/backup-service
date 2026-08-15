@@ -1,6 +1,6 @@
 from pathlib import Path
 from backuper_app.utils import get_archive_by_date, get_archive_by_path, validate_checksum, is_checksum_file
-from backuper_app.exception import InvalidArgumetError
+from backuper_app.exception import InvalidArgumetError, BackuperError
 
 
 class Verify:
@@ -15,7 +15,13 @@ class Verify:
         elif self.date and self.archive_path:
             #Find path that not hash file
             match_archives = get_archive_by_date(self.archive_path, date=self.date)
-            backup_files = [file for file in match_archives if is_checksum_file(file)]
+            # Get backup file except checksum file
+            backup_files = [file for file in match_archives if not is_checksum_file(file)]
+
+            # Handle Not found archive
+            if len(backup_files) == 0:
+                raise BackuperError(f"No archive matched in {self.archive_path or self.date}")
+
             archive_file = backup_files[-1]
         else:
             raise InvalidArgumetError("Missing argument for Verify command")

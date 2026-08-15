@@ -41,7 +41,6 @@ def is_checksum_file(path: Path) -> bool:
 
 #Return bool, expected and actual hash
 def validate_checksum(file_path: Path) -> None:
-    #Resolve checksum path for file
     checksum_path = file_path.with_suffix(file_path.suffix + ".sha256")
 
     #Validate checksum file
