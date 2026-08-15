@@ -3,7 +3,9 @@ import hashlib
 from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from pathlib import Path
-from backuper_app.exception import EncryptionError
+from backuper_app.exception import EncryptionError, BackuperError
+
+MIN_ENCRYPTED_SIZE = 12 + 16
 
 class Encryption:
     def __init__(self, key_path: Path):
@@ -16,9 +18,15 @@ class Encryption:
 
     @master_key.setter
     def master_key(self, value: Path):
-        with value.open('rb') as file:
-            data = file.read()
-            self.__master_key = self._decode_to_32_byte(data)
+        try:
+            with value.open('rb') as file:
+                data = file.read()
+        except PermissionError as e:
+            raise BackuperError("Unable to read master key") from e
+        if len(data) <= 0:
+            raise BackuperError("Master key is empty, please provide a valid key")
+
+        self.__master_key = self._decode_to_32_byte(data)
 
     @staticmethod
     def _decode_to_32_byte(data_key):
@@ -26,7 +34,7 @@ class Encryption:
 
     @staticmethod
     def is_encrypted_file(file_path: Path) -> bool:
-        return ".enc" in file_path.suffixes
+        return file_path.suffix == ".enc"
 
     def encrypt_file(self, file_path: Path) -> Path:
         encrypted_path = file_path.with_suffix(file_path.suffix + ".enc")
@@ -52,6 +60,10 @@ class Encryption:
 
         aesgcm = AESGCM(self.__master_key)
 
+        # Validate encrypted backup structure
+        if enc_file_path.stat().st_size < MIN_ENCRYPTED_SIZE:
+            raise EncryptionError("Malformed encryption backup")
+
         with enc_file_path.open('rb') as file_in:
             file_content = file_in.read()
 
@@ -61,7 +73,7 @@ class Encryption:
         try:
             data_text = aesgcm.decrypt(nonce, ciphertext, None)
         except InvalidTag:
-            raise EncryptionError("Master key invalid")
+            raise EncryptionError("Unable to decrypt backup: invalid key or corrupted backup")
 
         with decrypted_file.open('wb') as file_out:
             file_out.write(data_text)

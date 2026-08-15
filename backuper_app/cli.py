@@ -219,14 +219,17 @@ def run_backup(request):
         retention=config.keep_last
     )
 
+    encryption = None
+    if config.encryption_enabled:
+        encryption = Encryption(config.key_path)
+
     backup_path = backuper.do_backup()
     logger.info(f"Backup created: {backup_path.name} {format_size(backup_path.lstat().st_size)}")
 
     checksum_path = make_hash(backup_path)
     logger.info(f"Checksum generated: {checksum_path.name}")
 
-    if config.encryption_enabled:
-        encryption = Encryption(config.key_path)
+    if encryption:
         encrypted_file_path = encryption.encrypt_file(backup_path)
         logger.info(f"Backup has been encrypted to {encrypted_file_path.name}")
 

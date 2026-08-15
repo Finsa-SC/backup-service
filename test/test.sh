@@ -170,6 +170,42 @@ test_encryption() {
     fi
 }
 
+test_encryption_empty_key() {
+    local encryption_path="$temporary_dir/etc/encryption-empty-key-test.toml"
+    local master_key="$temporary_dir/etc/empty_master.key"
+    local empty_key_backup="$temporary_dir/empty-key-backup"
+
+    mkdir -p "$empty_key_backup"
+    : > "$master_key"
+
+    "$backuper" init "$encryption_path" \
+        --target "$temporary_dir" \
+        --destination "$empty_key_backup" \
+        --compression "gzip" \
+        --key-path "$master_key" \
+        1> /dev/null
+
+    if "$backuper" backup --config "$encryption_path" 1> /dev/null; then
+        failed "ENCRYPTION empty key was accepted"
+        return
+    fi
+
+    if compgen -G "$empty_key_backup/*.tar.gz" > /dev/null; then
+        failed "ENCRYPTION empty key created backup artifact"
+        return
+    fi
+
+    if compgen -G "$empty_key_backup/*.sha256" > /dev/null; then
+        failed "ENCRYPTION empty key created checksum"
+        return
+    fi
+
+    success "ENCRYPTION empty key rejected before backup"
+
+    chmod 000 "$master_key"
+    "$backuper" backup --config "$encryption_path"
+}
+
 main() {
     info "Starting auto test for backuper"
     mkdir -p "$temporary_dir"
@@ -186,6 +222,7 @@ main() {
     test_verify
     test_restore
     test_encryption
+    test_encryption_empty_key
 
     info "Cleaning up test directory"
     rm -rf "$temporary_dir"
