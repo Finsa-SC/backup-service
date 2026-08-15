@@ -29,7 +29,9 @@ class FilterEngine:
         filtered: list[Path] = []
 
         #Get base file
-        if self.include:
+        if self.target_path.is_file():
+            filtered.extend([self.target_path])
+        elif self.include:
             filtered.extend(list(self.resolve_glob_path(self.include)))
         else:
             filtered.extend(self.target_path.rglob("*"))
