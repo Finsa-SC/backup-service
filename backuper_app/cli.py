@@ -185,11 +185,11 @@ def run_backup(request):
 
     _validate_archive(config.archive_path, config.archive_enable, keep_last=config.keep_last)
 
-    # if not request.dry_run:
-    logger.info(f"Starting backup service for {config.backup_name}")
-    logger.info(f"Source: {config.target}")
-    logger.info(f"Destination: {config.destination}")
-    logger.info(f"Compression: {config.compression}")
+    if not request.dry_run:
+        logger.info(f"Starting backup service for {config.backup_name}")
+        logger.info(f"Source: {config.target}")
+        logger.info(f"Destination: {config.destination}")
+        logger.info(f"Compression: {config.compression}")
 
     parent_path = config.target.parent
 
