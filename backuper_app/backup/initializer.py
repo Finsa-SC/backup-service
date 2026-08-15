@@ -79,6 +79,7 @@ exclude = [
     "dist/",
     "**.__pycache__/",
     "**/*.pyc",
+    "**/*.key",
 ]
 
 [retention]

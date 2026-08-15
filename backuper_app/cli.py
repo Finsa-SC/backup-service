@@ -3,7 +3,7 @@ from importlib.metadata import version
 from pathlib import Path
 from backuper_app.utils import get_logger, format_size
 from backuper_app.config import Config
-from backuper_app.backup import Retention, Archive, Backuper, Restore, Verify, Initializer
+from backuper_app.backup import Retention, Archive, Backuper, Restore, Verify, Initializer, Encryption
 from backuper_app.exception import InvalidArgumetError, ConfigurationError
 
 logger = get_logger(__name__)
@@ -213,6 +213,11 @@ def run_backup(request):
 
     checksum_path = make_hash(backup_path)
     logger.info(f"Checksum generated: {checksum_path.name}")
+
+    if config.encryption_enabled:
+        encryption = Encryption(config.key_path)
+        encrypted_file_path = encryption.encrypt_file(backup_path)
+        logger.info(f"Backup has been encrypted to {encrypted_file_path.name}")
 
     #Check retention enabled
     if config.keep_last:

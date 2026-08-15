@@ -17,6 +17,8 @@ class BackupConfig:
     compression: str
     archive_enable: bool
     archive_path: Path
+    encryption_enabled: bool
+    key_path: Path
     link_mode: str = "follow"
 
 class Config:
@@ -46,6 +48,7 @@ class Config:
         retention = config["retention"]
         archive = config["archive"]
         config_filter = config["filter"]
+        encryption = config['encryption']
 
         def _validate_path(key: str, path) -> Path:
             if not path.strip():
@@ -68,6 +71,11 @@ class Config:
         if archive_enabled:
             archive_backup = _validate_path("Archive", archive_backup)
 
+        encryption_enabled =  encryption.get('enabled', False)
+        key_path = encryption.get('key_path', '')
+        if encryption_enabled:
+            key_path = _validate_path("Master Key", key_path)
+
         backup_name = self._set_backup_name(backup.get("backup_name", None), target_backup)
 
         return BackupConfig(
@@ -79,7 +87,8 @@ class Config:
             keep_last=retention.get("keep_last", None),
             compression=backup.get("compression", None),
             archive_enable=archive_enabled,
-            #Optional path archive use quote instead of None
             archive_path=archive_backup,
-            link_mode=backup["link_mode"]
+            encryption_enabled=encryption_enabled,
+            key_path=key_path,
+            link_mode=backup["link_mode"],
         )
