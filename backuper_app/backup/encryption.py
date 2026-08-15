@@ -1,7 +1,9 @@
 import os
 import hashlib
+from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from pathlib import Path
+from backuper_app.exception import EncryptionError
 
 class Encryption:
     def __init__(self, key_path: Path):
@@ -56,7 +58,11 @@ class Encryption:
         nonce = file_content[:12]
         ciphertext = file_content[12:]
 
-        data_text = aesgcm.decrypt(nonce, ciphertext, None)
+        try:
+            data_text = aesgcm.decrypt(nonce, ciphertext, None)
+        except InvalidTag:
+            raise EncryptionError("Master key invalid")
+
         with decrypted_file.open('wb') as file_out:
             file_out.write(data_text)
 

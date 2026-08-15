@@ -4,7 +4,7 @@ from pathlib import Path
 from backuper_app.utils import get_logger, format_size, get_file_by_path_or_date, validate_checksum
 from backuper_app.config import Config
 from backuper_app.backup import Retention, Archive, Backuper, Restore, Verify, Initializer, Encryption
-from backuper_app.exception import InvalidArgumetError, ConfigurationError
+from backuper_app.exception import InvalidArgumetError, ConfigurationError, BackuperError
 
 logger = get_logger(__name__)
 VERSION = version("file-backuper")
@@ -261,6 +261,8 @@ def run_restore(request):
         if Encryption.is_encrypted_file(archive_file) and not key_path:
             raise InvalidArgumetError("Backup is encrypted but missing --key-path argument to open backup")
         elif Encryption.is_encrypted_file(archive_file):
+            if not Path(key_path).exists():
+                raise BackuperError("Master key path is invalid")
             encryption = Encryption(key_path)
 
             encryption.master_key = key_path
