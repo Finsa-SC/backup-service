@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-backuper="/home/silence-suzuka/Project/File_Backuper/.venv/bin/backuper"
+backuper=".venv/bin/backuper"
 temporary_dir="/tmp/auto-test"
 backup_dir="$temporary_dir/backup"
 extract_dir="$temporary_dir/extract"

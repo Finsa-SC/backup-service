@@ -172,8 +172,8 @@ def _valid_input_archive(file: Path | None, date: str | None, archive_path: Path
 
     return True
 
-def _validate_archive(archive_path: Path|None, archive_enable: bool):
-    if not archive_enable:
+def _validate_archive(archive_path: Path|None, archive_enable: bool, keep_last: int|None):
+    if keep_last and not archive_enable:
         raise ConfigurationError(f"Keep last active but archive is {archive_enable}")
     if archive_enable and not archive_path:
         raise ConfigurationError(f"Archive is enabled but archive path is not set")
@@ -183,7 +183,7 @@ def run_backup(request):
 
     config = load_config(get_config())
 
-    _validate_archive(config.archive_path, config.archive_enable)
+    _validate_archive(config.archive_path, config.archive_enable, keep_last=config.keep_last)
 
     # if not request.dry_run:
     logger.info(f"Starting backup service for {config.backup_name}")

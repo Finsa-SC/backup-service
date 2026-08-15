@@ -64,7 +64,9 @@ class Config:
         destination_backup = _validate_path("destination", destination_backup)
 
         archive_backup = archive.get('path', '')
-        archive_backup = _validate_path("Archive", archive_backup)
+        archive_enabled = archive.get("enabled", False)
+        if archive_enabled:
+            archive_backup = _validate_path("Archive", archive_backup)
 
         backup_name = self._set_backup_name(backup.get("backup_name", None), target_backup)
 
@@ -76,7 +78,7 @@ class Config:
             exclude=config_filter.get("exclude", None),
             keep_last=retention.get("keep_last", None),
             compression=backup.get("compression", None),
-            archive_enable=archive.get("enabled", False),
+            archive_enable=archive_enabled,
             #Optional path archive use quote instead of None
             archive_path=archive_backup,
             link_mode=backup["link_mode"]
