@@ -22,6 +22,10 @@ class Encryption:
     def _decode_to_32_byte(data_key):
         return hashlib.sha256(data_key).digest()
 
+    @staticmethod
+    def is_encrypted_file(file_path: Path) -> bool:
+        return ".enc" in file_path.suffixes
+
     def encrypt_file(self, file_path: Path) -> Path:
         encrypted_path = file_path.with_suffix(file_path.suffix + ".enc")
         aesgcm = AESGCM(self.__master_key)

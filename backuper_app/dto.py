@@ -11,6 +11,7 @@ class RestoreRequest:
     date: str
     destination: Path
     archive_path: Path
+    key_path: Path
 
 @dataclass(frozen=True)
 class VerifyRequest:
