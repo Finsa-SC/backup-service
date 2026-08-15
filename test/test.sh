@@ -7,6 +7,7 @@ extract_dir="$temporary_dir/extract"
 archive_dir="$temporary_dir/archive"
 restore_dir="$temporary_dir/restore"
 target_config="$temporary_dir/etc/arg-init-test.toml"
+recovery_dir="$temporary_dir/recovery"
 
 # ── Colors
 RED='\033[0;31m'
@@ -115,9 +116,57 @@ test_restore() {
     fi
 
     if [ -e "$restore_dir"/* ]; then
-        success "RESTORE file test exists"
+        success "RESTORE file test export exists"
     else
-        success "RESTORE file test exists"
+        failed "RESTORE file test export doesn't exists"
+    fi
+}
+
+test_encryption() {
+    local encryption_path="$temporary_dir/etc/encryption-init-test.toml"
+    local master_key="$temporary_dir/etc/master.key"
+    local wrong_master_key="$temporary_dir/etc/wrong_master.key"
+    echo "hello, world!" > "$master_key"
+    echo "halo, dunia!" > "$wrong_master_key"
+
+    "$backuper" init "$temporary_dir/etc/encryption-init-test.toml" \
+        --target "$temporary_dir" \
+        --destination "$backup_dir" \
+        --retention 4 \
+        --link-mode "ignore" \
+        --compression "gzip" \
+        --archive-path "$archive_dir" \
+        --key-path "$master_key" \
+        1> /dev/null
+
+    if "$backuper" backup --config "$encryption_path" 1> /dev/null; then
+        success "ENCRYPTION test make one encrypted file passed"
+    else
+        failed "ENCRYPTION test make one encrypted file failed"
+    fi
+
+    local newest
+    newest="$(ls -1t "$backup_dir"/*.enc 2>/dev/null | head -n 1)"
+    "$backuper" restore --file "$newest" --archive-path "$backup_dir" --destination "$recovery_dir" --key-path "$wrong_master_key" 1> /dev/null
+    if "$backuper" restore \
+        --file "$newest" \
+        --archive-path "$backup_dir" \
+        --destination "$recovery_dir" \
+        --key-path "$wrong_master_key" 1>/dev/null; then
+
+        failed "ENCRYPTION invalid key was accepted"
+    else
+        if [ -e "$newest" ]; then
+            success "ENCRYPTION invalid key rejected and backup preserved"
+        else
+            failed "ENCRYPTION invalid key rejected but backup was removed"
+        fi
+    fi
+
+    if "$backuper" restore --file "$newest" --archive-path "$backup_dir" --destination "$recovery_dir" --key-path "$master_key" 1> /dev/null; then
+        success "ENCRYPTION test passed to restore encrypted data"
+    else
+        failed "ENCRYPTION test failed to restore encrypted data"
     fi
 }
 
@@ -128,6 +177,7 @@ main() {
     mkdir -p "$extract_dir"
     mkdir -p "$archive_dir"
     mkdir -p "$restore_dir"
+    mkdir -p "$recovery_dir"
 
     test_init
     test_dry_run
@@ -135,6 +185,7 @@ main() {
     test_retention
     test_verify
     test_restore
+    test_encryption
 
     info "Cleaning up test directory"
     rm -rf "$temporary_dir"

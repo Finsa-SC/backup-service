@@ -160,6 +160,11 @@ def get_config():
         default=None,
         help="Path to archive backup",
     )
+    init_mode.add_argument(
+        "--key-path",
+        default=None,
+        help="Path to master key to open encrypted backup"
+    )
 
     return parser.parse_args()
 
@@ -267,6 +272,7 @@ def run_restore(request):
 
             encryption.master_key = key_path
             archive_file = encryption.decrypt_file(archive_file)
+            logger.info(f"Success encrypted backup to {archive_file}")
             validate_checksum(archive_file)
 
         logger.info(f"Restoring {archive_file}...")
@@ -296,13 +302,14 @@ def run_verify(request):
 
 def run_init(request):
     init = Initializer(
-        request.config,
-        request.target,
-        request.destination,
-        request.retention,
-        request.compression,
-        request.link_mode,
-        request.archive_path,
+        config_path=request.config,
+        target=request.target,
+        destination=request.destination,
+        retention=request.retention,
+        compression=request.compression,
+        link_mode=request.link_mode,
+        archive_path=request.archive_path,
+        key_path=request.key_path,
     )
 
     config_path = init.make_init()

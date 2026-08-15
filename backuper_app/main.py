@@ -45,6 +45,7 @@ def main():
                     compression=argv.compression,
                     link_mode=argv.link_mode,
                     archive_path=argv.archive_path,
+                    key_path=argv.key_path,
                 )
                 run_init(request)
             case _:

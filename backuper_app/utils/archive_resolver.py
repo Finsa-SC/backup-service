@@ -33,7 +33,7 @@ def get_file_by_path_or_date(file_path: Path | None, archive_path: Path|None, da
     if file_path:
         archive_file = get_archive_by_path(file_path)
     else:
-        archive_stack = get_archive_by_date(archive_path, date)
+        archive_stack = get_archive_by_date(Path(archive_path), date)
         if archive_stack:
             archive_file = archive_stack[0]
         else:
