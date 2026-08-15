@@ -1,10 +1,10 @@
 import argparse
 from importlib.metadata import version
 from pathlib import Path
-from backuper_app.utils import get_logger, format_size
+from backuper_app.utils import get_logger, format_size, get_file_by_path_or_date, validate_checksum
 from backuper_app.config import Config
-from backuper_app.backup import Retention, Archive, Backuper, Restore, Verify, Initializer
-from backuper_app.exception import InvalidArgumetError, ConfigurationError
+from backuper_app.backup import Retention, Archive, Backuper, Restore, Verify, Initializer, Encryption
+from backuper_app.exception import InvalidArgumetError, ConfigurationError, BackuperError
 
 logger = get_logger(__name__)
 VERSION = version("file-backuper")
@@ -73,6 +73,12 @@ def get_config():
     restore_mode.add_argument(
         "--archive-path",
         help="Path to your archive directory to find file to be extract",
+    )
+    restore_mode.add_argument(
+        "--key-path",
+        type=Path,
+        default=None,
+        help="Path to your master code to open encryption backup"
     )
 
     ### Verify
@@ -154,6 +160,11 @@ def get_config():
         default=None,
         help="Path to archive backup",
     )
+    init_mode.add_argument(
+        "--key-path",
+        default=None,
+        help="Path to master key to open encrypted backup"
+    )
 
     return parser.parse_args()
 
@@ -214,6 +225,11 @@ def run_backup(request):
     checksum_path = make_hash(backup_path)
     logger.info(f"Checksum generated: {checksum_path.name}")
 
+    if config.encryption_enabled:
+        encryption = Encryption(config.key_path)
+        encrypted_file_path = encryption.encrypt_file(backup_path)
+        logger.info(f"Backup has been encrypted to {encrypted_file_path.name}")
+
     #Check retention enabled
     if config.keep_last:
         backup_retention = Retention(
@@ -234,30 +250,43 @@ def run_backup(request):
             backup_archive.do_archive()
 
 def run_restore(request):
-    from backuper_app.utils.checksum import validate_checksum
-
     target = request.file_path or request.date
     logger.info(f"Verifying {target}")
     file_path = request.file_path
     date = request.date
     destination = request.destination
     archive_path = request.archive_path
+    key_path = request.key_path
 
     if _valid_input_archive(file_path, date, archive_path=archive_path):
-        logger.info(f"Restoring {file_path or date}...")
+        # Resolve file from path or date
+        archive_file = get_file_by_path_or_date(file_path, date=date, archive_path=archive_path)
 
+        # Decrypt file if file is encrypted
+        if Encryption.is_encrypted_file(archive_file) and not key_path:
+            raise InvalidArgumetError("Backup is encrypted but missing --key-path argument to open backup")
+        elif Encryption.is_encrypted_file(archive_file):
+            if not Path(key_path).exists():
+                raise BackuperError("Master key path is invalid")
+            encryption = Encryption(key_path)
 
+            encryption.master_key = key_path
+            archive_file = encryption.decrypt_file(archive_file)
+            logger.info(f"Success encrypted backup to {archive_file}")
+            validate_checksum(archive_file)
+
+        logger.info(f"Restoring {archive_file}...")
         restore = Restore(
-            file_path=file_path,
-            date=request.date,
+            file_path=archive_file,
             extract_path=destination,
             archive_path=archive_path,
         )
-        archive_backup = restore.do_restore()
-        validate_checksum(archive_backup)
+
+        logger.info(f"Extracting {archive_file}...file_path")
+        extract_path = restore.do_restore()
+        logger.info(f"{archive_file.name} has been extract to {extract_path}")
 
         logger.info("Restore completed.")
-
 
 def run_verify(request):
     if _valid_input_archive(file=request.file_path, date=request.date, archive_path=request.archive_path):
@@ -273,13 +302,14 @@ def run_verify(request):
 
 def run_init(request):
     init = Initializer(
-        request.config,
-        request.target,
-        request.destination,
-        request.retention,
-        request.compression,
-        request.link_mode,
-        request.archive_path,
+        config_path=request.config,
+        target=request.target,
+        destination=request.destination,
+        retention=request.retention,
+        compression=request.compression,
+        link_mode=request.link_mode,
+        archive_path=request.archive_path,
+        key_path=request.key_path,
     )
 
     config_path = init.make_init()

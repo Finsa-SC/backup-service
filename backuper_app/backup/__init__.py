@@ -4,3 +4,4 @@ from .archive import Archive
 from .verify import Verify
 from .restore import Restore
 from .initializer import Initializer
+from .encryption import Encryption

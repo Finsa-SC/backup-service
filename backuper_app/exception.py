@@ -18,3 +18,6 @@ class InvalidArgumetError(BackuperError):
 
 class ConfigurationError(BackuperError):
     ...
+
+class EncryptionError(BackuperError):
+    ...

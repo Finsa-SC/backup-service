@@ -10,6 +10,7 @@ class Initializer:
             compression: str,
             link_mode: str,
             archive_path: Path,
+            key_path: Path,
     ):
         self.config_path = config_path
         self.target = target
@@ -19,6 +20,7 @@ class Initializer:
         self.link_mode = link_mode
         self.default_file = Path("/etc/backuper/")
         self.archive_path = archive_path
+        self.key_path = key_path
 
     def _resolve_default_name(self) -> Path:
         if not self.config_path:
@@ -64,8 +66,8 @@ class Initializer:
         return f"{prefix}{key} = {self._toml_value(value)}"
 
     def _set_init(self):
-        return f"""
-[backup]
+        return \
+f"""[backup]
 {self._optional_key("target",      hint='',         value=self.target,         required=True)}
 {self._optional_key("destination", hint='',         value=self.destination,    required=True)}
 {self._optional_key("backup_name", hint='',         value="")}
@@ -79,6 +81,7 @@ exclude = [
     "dist/",
     "**.__pycache__/",
     "**/*.pyc",
+    "**/*.key",
 ]
 
 [retention]
@@ -87,6 +90,10 @@ exclude = [
 [archive]
 enabled = {'true' if self.archive_path else 'false'}
 {self._optional_key("path", hint='', value=self.archive_path)}
+
+[encryption]
+enabled = {'true' if self.key_path else 'false'}
+{self._optional_key("key_path", hint='', value=self.key_path)}
 """
 
     def make_init(self) -> Path:
