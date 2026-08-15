@@ -3,7 +3,7 @@ import hashlib
 from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from pathlib import Path
-from backuper_app.exception import EncryptionError
+from backuper_app.exception import EncryptionError, BackuperError
 
 MIN_ENCRYPTED_SIZE = 12 + 16
 
@@ -20,7 +20,10 @@ class Encryption:
     def master_key(self, value: Path):
         with value.open('rb') as file:
             data = file.read()
-            self.__master_key = self._decode_to_32_byte(data)
+        if len(data) <= 0:
+            raise BackuperError("Master key is empty, please provide a valid key")
+
+        self.__master_key = self._decode_to_32_byte(data)
 
     @staticmethod
     def _decode_to_32_byte(data_key):
