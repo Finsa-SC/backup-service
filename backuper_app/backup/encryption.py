@@ -18,8 +18,11 @@ class Encryption:
 
     @master_key.setter
     def master_key(self, value: Path):
-        with value.open('rb') as file:
-            data = file.read()
+        try:
+            with value.open('rb') as file:
+                data = file.read()
+        except PermissionError as e:
+            raise BackuperError("Unable to read master key") from e
         if len(data) <= 0:
             raise BackuperError("Master key is empty, please provide a valid key")
 
