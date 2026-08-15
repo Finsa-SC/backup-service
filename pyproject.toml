@@ -2,7 +2,9 @@
 name = "file-backuper"
 version = "1.4.0"
 requires-python = ">=3.14"
-dependencies = []
+dependencies = [
+    "cryptography>=50.0.0",
+]
 
 [project.scripts]
 backuper = "backuper_app.main:main"
