@@ -42,7 +42,7 @@ class Backuper:
 
     @staticmethod
     def set_backup_name(backup_name: str) -> str:
-        return f"{backup_name}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        return f"{backup_name}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S_%f')}"
 
     def compress(
             self,

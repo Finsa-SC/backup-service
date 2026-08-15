@@ -35,7 +35,7 @@ class Restore:
             check=True,
         )
 
-    def do_restore(self):
+    def do_restore(self) -> Path:
         if self.file_path:
             archive_file = get_archive_by_path(self.file_path)
         else:
@@ -51,6 +51,7 @@ class Restore:
         logger.info(f"Extracting {archive_file}...")
         self._extract_archive(archive_file=archive_file)
         logger.info(f"{archive_file.name} has been extract to {self.extract_path}")
+        return archive_file
 
 if __name__ == "__main__":
     restore = Restore(date="2026-07-31", archive_path=Path("/home/silence-suzuka/backup_archive"))

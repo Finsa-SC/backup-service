@@ -246,7 +246,6 @@ def run_restore(request):
     if _valid_input_archive(file_path, date, archive_path=archive_path):
         logger.info(f"Restoring {file_path or date}...")
 
-        validate_checksum(file_path)
 
         restore = Restore(
             file_path=file_path,
@@ -254,7 +253,8 @@ def run_restore(request):
             extract_path=destination,
             archive_path=archive_path,
         )
-        restore.do_restore()
+        archive_backup = restore.do_restore()
+        validate_checksum(archive_backup)
 
         logger.info("Restore completed.")
 
