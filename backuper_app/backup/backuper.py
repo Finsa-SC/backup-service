@@ -44,6 +44,9 @@ class Backuper:
     def set_backup_name(backup_name: str) -> str:
         return f"{backup_name}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S_%f')}"
 
+    def get_relative_path_list(self, path_list: list[Path]) -> list[Path]:
+        return [path.relative_to(self.parent_path) for path in path_list]
+
     def compress(
             self,
             compression,
@@ -61,7 +64,8 @@ class Backuper:
             str(self.parent_path),
         ]
 
-        str_command.extend(backup_list)
+        relative_backup = self.get_relative_path_list(backup_list)
+        str_command.extend(relative_backup)
 
         # Insert manifest into compression command
         manifest_command = [

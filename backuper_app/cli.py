@@ -188,6 +188,8 @@ def _validate_archive(archive_path: Path|None, archive_enable: bool, keep_last: 
         raise ConfigurationError(f"Keep last active but archive is {archive_enable}")
     if archive_enable and not archive_path:
         raise ConfigurationError(f"Archive is enabled but archive path is not set")
+    if not keep_last and archive_enable:
+        raise ConfigurationError(f"Archive is enabled but keep last is not set")
 
 def run_backup(request):
     from backuper_app.utils.checksum import make_hash
@@ -219,6 +221,7 @@ def run_backup(request):
         retention=config.keep_last
     )
 
+    # Init encryption here to validate key path before backuping
     encryption = None
     if config.encryption_enabled:
         encryption = Encryption(config.key_path)
@@ -229,6 +232,7 @@ def run_backup(request):
     checksum_path = make_hash(backup_path)
     logger.info(f"Checksum generated: {checksum_path.name}")
 
+    # Encrypt backup except checksum file
     if encryption:
         encrypted_file_path = encryption.encrypt_file(backup_path)
         logger.info(f"Backup has been encrypted to {encrypted_file_path.name}")
