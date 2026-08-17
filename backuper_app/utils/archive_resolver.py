@@ -27,7 +27,7 @@ def get_archive_by_path(archive_path: Path):
     if archive_path.is_file(follow_symlinks=True):
         return archive_path
     else:
-        raise BackuperError(f"{archive_path} is doesn't exist or not a file")
+        raise BackuperError(f"{archive_path} doesn't exist or not a file")
 
 def get_file_by_path_or_date(file_path: Path | None, archive_path: Path|None, date:str|None) -> Path:
     if file_path:

@@ -201,9 +201,6 @@ test_encryption_empty_key() {
     fi
 
     success "ENCRYPTION empty key rejected before backup"
-
-    chmod 000 "$master_key"
-    "$backuper" backup --config "$encryption_path"
 }
 
 main() {

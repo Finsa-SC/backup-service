@@ -1,5 +1,5 @@
 from pathlib import Path
-from backuper_app.utils import get_logger, validate_checksum
+from backuper_app.utils import get_logger
 import subprocess
 from backuper_app.backup.compression import resolve_compression_from_suffix
 
@@ -35,8 +35,6 @@ class Restore:
         )
 
     def do_restore(self) -> Path:
-        validate_checksum(self.file_path)
-
         self._make_extract_dir()
 
         self._extract_archive(archive_file=self.file_path)

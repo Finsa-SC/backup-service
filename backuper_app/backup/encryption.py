@@ -1,16 +1,18 @@
-import os
-import hashlib
+import os, hashlib, struct, tempfile
 from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from pathlib import Path
 from backuper_app.exception import EncryptionError, BackuperError
 
 MIN_ENCRYPTED_SIZE = 12 + 16
+CHUNK_SIZE = 8 * 1024 * 1024
+VERSION_LIST = (1, )
 
 class Encryption:
     def __init__(self, key_path: Path):
         self.__key_path = key_path
         self.master_key = key_path
+        self.temporary_decrypt_file = None
 
     @property
     def master_key(self):
@@ -33,21 +35,50 @@ class Encryption:
         return hashlib.sha256(data_key).digest()
 
     @staticmethod
-    def is_encrypted_file(file_path: Path) -> bool:
-        return file_path.suffix == ".enc"
+    def _encrypt(aesgcm, file_in, file_out):
+
+        file_out.write(struct.pack("B", 1))
+
+        while chunk := file_in.read(CHUNK_SIZE):
+            nonce = os.urandom(12)
+            ciphertext = aesgcm.encrypt(nonce, chunk, None)
+            ciphertext_size = len(ciphertext)
+            ciphertext_size_bytes = struct.pack(">Q", ciphertext_size)
+
+            file_out.write(ciphertext_size_bytes)
+            file_out.write(nonce)
+            file_out.write(ciphertext)
+
+    @staticmethod
+    def _decrypt(aesgcm, file_in, file_out):
+        # Version verification
+        version_bytes = file_in.read(1)
+        version = struct.unpack("B", version_bytes)[0]
+        if version not in VERSION_LIST:
+            raise EncryptionError("Unsupported encryption version")
+
+        while True:
+            # Get chunk size
+            ciphertext_size_bytes = file_in.read(8)
+            if not ciphertext_size_bytes:
+                break
+            ciphertext_size = struct.unpack(">Q", ciphertext_size_bytes)[0]
+
+            nonce = file_in.read(12)
+            ciphertext = file_in.read(ciphertext_size)
+
+            plain_text = aesgcm.decrypt(nonce, ciphertext, None)
+            file_out.write(plain_text)
 
     def encrypt_file(self, file_path: Path) -> Path:
         encrypted_path = file_path.with_suffix(file_path.suffix + ".enc")
         aesgcm = AESGCM(self.__master_key)
-        nonce = os.urandom(12)
 
-        with file_path.open('rb') as file_in:
-            file_content = file_in.read()
-
-        ciphertext = aesgcm.encrypt(nonce, file_content, None)
-
-        with encrypted_path.open('wb') as file_out:
-            file_out.write(nonce + ciphertext)
+        with (
+            file_path.open('rb') as file_in,
+            encrypted_path.open('wb') as file_out
+        ):
+            self._encrypt(aesgcm, file_in, file_out)
 
         # Cleanup plain backup
         if encrypted_path.exists(follow_symlinks=True):
@@ -56,33 +87,32 @@ class Encryption:
         return encrypted_path
 
     def decrypt_file(self, enc_file_path: Path) -> Path:
-        decrypted_file = enc_file_path.with_name(enc_file_path.name.removesuffix(".enc"))
+        with tempfile.TemporaryDirectory(delete=False) as temp_dir:
+            dir_path = Path(temp_dir)
+
+        file_name = enc_file_path.with_name(enc_file_path.name.removesuffix(".enc"))
+        decrypted_file = dir_path / file_name.name
 
         aesgcm = AESGCM(self.__master_key)
 
         # Validate encrypted backup structure
         if enc_file_path.stat().st_size < MIN_ENCRYPTED_SIZE:
             raise EncryptionError("Malformed encryption backup")
+        with (
+            enc_file_path.open('rb') as file_in,
+            decrypted_file.open('wb') as file_out
+        ):
+            try:
+                self._decrypt(aesgcm, file_in, file_out)
+            except InvalidTag:
+                raise EncryptionError("Unable to decrypt backup: invalid key or corrupted backup")
 
-        with enc_file_path.open('rb') as file_in:
-            file_content = file_in.read()
+        return Path(decrypted_file)
 
-        nonce = file_content[:12]
-        ciphertext = file_content[12:]
+# # # Public function
 
-        try:
-            data_text = aesgcm.decrypt(nonce, ciphertext, None)
-        except InvalidTag:
-            raise EncryptionError("Unable to decrypt backup: invalid key or corrupted backup")
-
-        with decrypted_file.open('wb') as file_out:
-            file_out.write(data_text)
-
-        # Cleanup encrypted backup
-        if decrypted_file.exists(follow_symlinks=True):
-            enc_file_path.unlink(missing_ok=True)
-
-        return decrypted_file
+def is_encrypted_file(file_path: Path) -> bool:
+    return file_path.suffix == ".enc"
 
 if __name__ == "__main__":
     my_key = Path("/etc/backuper/master.key")

@@ -1,9 +1,9 @@
 import argparse
 from importlib.metadata import version
 from pathlib import Path
-from backuper_app.utils import get_logger, format_size, get_file_by_path_or_date, validate_checksum
+from backuper_app.utils import get_logger, format_size, get_file_by_path_or_date, validate_checksum, resolve_checksum_path
 from backuper_app.config import Config
-from backuper_app.backup import Retention, Archive, Backuper, Restore, Verify, Initializer, Encryption
+from backuper_app.backup import Retention, Archive, Backuper, Restore, Verify, Initializer, Encryption, is_encrypted_file
 from backuper_app.exception import InvalidArgumetError, ConfigurationError, BackuperError
 
 logger = get_logger(__name__)
@@ -105,6 +105,12 @@ def get_config():
         default=None,
         help="Path to your archive directory to find file to be verify",
     )
+    verify_mode.add_argument(
+        "--key-path",
+        type=Path,
+        default=None,
+        help="Path to your master key file",
+    )
 
     ### Init
     init_mode = subparser.add_parser(
@@ -188,6 +194,8 @@ def _validate_archive(archive_path: Path|None, archive_enable: bool, keep_last: 
         raise ConfigurationError(f"Keep last active but archive is {archive_enable}")
     if archive_enable and not archive_path:
         raise ConfigurationError(f"Archive is enabled but archive path is not set")
+    if not keep_last and archive_enable:
+        raise ConfigurationError(f"Archive is enabled but keep last is not set")
 
 def run_backup(request):
     from backuper_app.utils.checksum import make_hash
@@ -219,6 +227,7 @@ def run_backup(request):
         retention=config.keep_last
     )
 
+    # Init encryption here to validate key path before backuping
     encryption = None
     if config.encryption_enabled:
         encryption = Encryption(config.key_path)
@@ -229,6 +238,12 @@ def run_backup(request):
     checksum_path = make_hash(backup_path)
     logger.info(f"Checksum generated: {checksum_path.name}")
 
+    # Validating checksum
+    logger.info(f"Validating checksum...")
+    validate_checksum(backup_path)
+    logger.info(f"Checkum is valid.")
+
+    # Encrypt backup except checksum file
     if encryption:
         encrypted_file_path = encryption.encrypt_file(backup_path)
         logger.info(f"Backup has been encrypted to {encrypted_file_path.name}")
@@ -264,25 +279,31 @@ def run_restore(request):
     if _valid_input_archive(file_path, date, archive_path=archive_path):
         # Resolve file from path or date
         archive_file = get_file_by_path_or_date(file_path, date=date, archive_path=archive_path)
+        parent_path = archive_file.parent
 
         # Decrypt file if file is encrypted
-        if Encryption.is_encrypted_file(archive_file) and not key_path:
+        if is_encrypted_file(archive_file) and not key_path:
             raise InvalidArgumetError("Backup is encrypted but missing --key-path argument to open backup")
-        elif Encryption.is_encrypted_file(archive_file):
+
+        elif is_encrypted_file(archive_file):
             if not Path(key_path).exists():
                 raise BackuperError("Master key path is invalid")
             encryption = Encryption(key_path)
 
-            encryption.master_key = key_path
             archive_file = encryption.decrypt_file(archive_file)
-            logger.info(f"Success encrypted backup to {archive_file}")
+            logger.info(f"Backup decrypted to {archive_file}")
+
+            checksum_path = resolve_checksum_path(archive_file, parent_path)
+            validate_checksum(file_path=archive_file, checksum_path=checksum_path)
+
+        else:
             validate_checksum(archive_file)
 
         logger.info(f"Restoring {archive_file}...")
         restore = Restore(
             file_path=archive_file,
             extract_path=destination,
-            archive_path=archive_path,
+            archive_path=archive_path
         )
 
         logger.info(f"Extracting {archive_file}...file_path")
@@ -291,17 +312,19 @@ def run_restore(request):
 
         logger.info("Restore completed.")
 
+        logger.debug("Cleaning up temporary encrypted compress file")
+        archive_file.unlink(missing_ok=True)
+
 def run_verify(request):
     if _valid_input_archive(file=request.file_path, date=request.date, archive_path=request.archive_path):
-        target = request.file_path or request.date
+        file_path = get_file_by_path_or_date(request.file_path, request.archive_path, request.date)
         verify = Verify(
-            file_path=request.file_path,
-            date=request.date,
-            archive_path=request.archive_path,
+            file_path=file_path,
+            key_path=request.key_path
         )
         is_valid = verify.do_verify()
         if is_valid:
-            logger.info(f"Archive verification passed for {target}")
+            logger.info(f"Archive verification passed for {file_path.name}")
 
 def run_init(request):
     init = Initializer(
