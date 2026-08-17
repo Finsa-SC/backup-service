@@ -35,8 +35,8 @@ class Encryption:
     def _decode_to_32_byte(data_key):
         return hashlib.sha256(data_key).digest()
 
-    def _encrypt(self, file_in, file_out):
-        aesgcm = AESGCM(self.__master_key)
+    @staticmethod
+    def _encrypt(aesgcm, file_in, file_out):
 
         file_out.write(struct.pack("B", 1))
 
@@ -50,14 +50,33 @@ class Encryption:
             file_out.write(nonce)
             file_out.write(ciphertext)
 
+    @staticmethod
+    def _decrypt(aesgcm, file_in, file_out):
+        # Not usefull in this version
+        version = file_in.read(1)
+
+        while True:
+            # Get chunk size
+            ciphertext_size_bytes = file_in.read(8)
+            if not ciphertext_size_bytes:
+                break
+            ciphertext_size = struct.unpack(">Q", ciphertext_size_bytes)[0]
+
+            nonce = file_in.read(12)
+            ciphertext = file_in.read(ciphertext_size)
+
+            plain_text = aesgcm.decrypt(nonce, ciphertext, None)
+            file_out.write(plain_text)
+
     def encrypt_file(self, file_path: Path) -> Path:
         encrypted_path = file_path.with_suffix(file_path.suffix + ".enc")
+        aesgcm = AESGCM(self.__master_key)
 
         with (
             file_path.open('rb') as file_in,
             encrypted_path.open('wb') as file_out
         ):
-            self._encrypt(file_in, file_out)
+            self._encrypt(aesgcm, file_in, file_out)
 
         # Cleanup plain backup
         if encrypted_path.exists(follow_symlinks=True):
@@ -74,19 +93,14 @@ class Encryption:
         if enc_file_path.stat().st_size < MIN_ENCRYPTED_SIZE:
             raise EncryptionError("Malformed encryption backup")
 
-        with enc_file_path.open('rb') as file_in:
-            file_content = file_in.read()
-
-        nonce = file_content[:12]
-        ciphertext = file_content[12:]
-
-        try:
-            data_text = aesgcm.decrypt(nonce, ciphertext, None)
-        except InvalidTag:
-            raise EncryptionError("Unable to decrypt backup: invalid key or corrupted backup")
-
-        with decrypted_file.open('wb') as file_out:
-            file_out.write(data_text)
+        with (
+            enc_file_path.open('rb') as file_in,
+            decrypted_file.open('wb') as file_out
+        ):
+            try:
+                self._decrypt(aesgcm, file_in, file_out)
+            except InvalidTag:
+                raise EncryptionError("Unable to decrypt backup: invalid key or corrupted backup")
 
         # Cleanup encrypted backup
         if decrypted_file.exists(follow_symlinks=True):
