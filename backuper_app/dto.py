@@ -11,13 +11,14 @@ class RestoreRequest:
     date: str
     destination: Path
     archive_path: Path
-    key_path: Path
+    key_path: Path|None
 
 @dataclass(frozen=True)
 class VerifyRequest:
     file_path: Path
     date: str
     archive_path: Path
+    key_path: Path|None
 
 @dataclass(frozen=True)
 class InitRequest:

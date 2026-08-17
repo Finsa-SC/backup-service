@@ -105,6 +105,12 @@ def get_config():
         default=None,
         help="Path to your archive directory to find file to be verify",
     )
+    verify_mode.add_argument(
+        "--key-path",
+        type=Path,
+        default=None,
+        help="Path to your master key file",
+    )
 
     ### Init
     init_mode = subparser.add_parser(
@@ -288,7 +294,7 @@ def run_restore(request):
             logger.info(f"Backup decrypted to {archive_file}")
 
             checksum_path = resolve_checksum_path(archive_file, parent_path)
-            validate_checksum(archive_file, checksum_path)
+            validate_checksum(file_path=archive_file, checksum_path=checksum_path)
 
         else:
             validate_checksum(archive_file)
@@ -311,15 +317,14 @@ def run_restore(request):
 
 def run_verify(request):
     if _valid_input_archive(file=request.file_path, date=request.date, archive_path=request.archive_path):
-        target = request.file_path or request.date
+        file_path = get_file_by_path_or_date(request.file_path, request.archive_path, request.date)
         verify = Verify(
-            file_path=request.file_path,
-            date=request.date,
-            archive_path=request.archive_path,
+            file_path=file_path,
+            key_path=request.key_path
         )
         is_valid = verify.do_verify()
         if is_valid:
-            logger.info(f"Archive verification passed for {target}")
+            logger.info(f"Archive verification passed for {file_path.name}")
 
 def run_init(request):
     init = Initializer(

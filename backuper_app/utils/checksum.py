@@ -49,7 +49,7 @@ def resolve_checksum_path(file_path: Path, backup_path: Path|None=None) -> Path:
     return file_path.with_suffix(file_path.suffix + ".sha256")
 
 #Return bool, expected and actual hash
-def validate_checksum(file_path: Path | None = None, checksum_path: Path|None=None) -> None:
+def validate_checksum(file_path: Path, checksum_path: Path|None=None) -> None:
     if not checksum_path:
         checksum_path = file_path.with_suffix(file_path.suffix + ".sha256")
 

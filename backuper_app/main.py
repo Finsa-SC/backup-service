@@ -33,6 +33,7 @@ def main():
                     file_path=argv.file,
                     date=argv.date,
                     archive_path=argv.archive_path,
+                    key_path=argv.key_path,
                 )
                 run_verify(request)
 
