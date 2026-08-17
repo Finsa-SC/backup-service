@@ -9,6 +9,7 @@ from backuper_app.exception import EncryptionError, BackuperError
 
 MIN_ENCRYPTED_SIZE = 12 + 16
 CHUNK_SIZE = 8 * 1024 * 1024
+VERSION_LIST = (1, )
 
 class Encryption:
     def __init__(self, key_path: Path):
@@ -52,8 +53,11 @@ class Encryption:
 
     @staticmethod
     def _decrypt(aesgcm, file_in, file_out):
-        # Not usefull in this version
-        version = file_in.read(1)
+        # Version verification
+        version_bytes = file_in.read(1)
+        version = struct.unpack("B", version_bytes)[0]
+        if version not in VERSION_LIST:
+            raise EncryptionError("Unsupported encryption version")
 
         while True:
             # Get chunk size
