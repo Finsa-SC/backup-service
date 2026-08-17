@@ -1,7 +1,4 @@
-import os
-import hashlib
-import struct
-
+import os, hashlib, struct, tempfile
 from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from pathlib import Path
@@ -15,6 +12,7 @@ class Encryption:
     def __init__(self, key_path: Path):
         self.__key_path = key_path
         self.master_key = key_path
+        self.temporary_decrypt_file = None
 
     @property
     def master_key(self):
@@ -89,14 +87,17 @@ class Encryption:
         return encrypted_path
 
     def decrypt_file(self, enc_file_path: Path) -> Path:
-        decrypted_file = enc_file_path.with_name(enc_file_path.name.removesuffix(".enc"))
+        with tempfile.TemporaryDirectory(delete=False) as temp_dir:
+            dir_path = Path(temp_dir)
+
+        file_name = enc_file_path.with_name(enc_file_path.name.removesuffix(".enc"))
+        decrypted_file = dir_path / file_name.name
 
         aesgcm = AESGCM(self.__master_key)
 
         # Validate encrypted backup structure
         if enc_file_path.stat().st_size < MIN_ENCRYPTED_SIZE:
             raise EncryptionError("Malformed encryption backup")
-
         with (
             enc_file_path.open('rb') as file_in,
             decrypted_file.open('wb') as file_out
@@ -106,14 +107,9 @@ class Encryption:
             except InvalidTag:
                 raise EncryptionError("Unable to decrypt backup: invalid key or corrupted backup")
 
-        # Cleanup encrypted backup
-        if decrypted_file.exists(follow_symlinks=True):
-            enc_file_path.unlink(missing_ok=True)
+        return Path(decrypted_file)
 
-        return decrypted_file
-
-
-# Public function
+# # # Public function
 
 def is_encrypted_file(file_path: Path) -> bool:
     return file_path.suffix == ".enc"
