@@ -1,11 +1,14 @@
 import os
 import hashlib
+import struct
+
 from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from pathlib import Path
 from backuper_app.exception import EncryptionError, BackuperError
 
 MIN_ENCRYPTED_SIZE = 12 + 16
+CHUNK_SIZE = 8 * 1024 * 1024
 
 class Encryption:
     def __init__(self, key_path: Path):
@@ -32,22 +35,29 @@ class Encryption:
     def _decode_to_32_byte(data_key):
         return hashlib.sha256(data_key).digest()
 
-    @staticmethod
-    def is_encrypted_file(file_path: Path) -> bool:
-        return file_path.suffix == ".enc"
+    def _encrypt(self, file_in, file_out):
+        aesgcm = AESGCM(self.__master_key)
+
+        file_out.write(struct.pack("B", 1))
+
+        while chunk := file_in.read(CHUNK_SIZE):
+            nonce = os.urandom(12)
+            ciphertext = aesgcm.encrypt(nonce, chunk, None)
+            ciphertext_size = len(ciphertext)
+            ciphertext_size_bytes = struct.pack(">Q", ciphertext_size)
+
+            file_out.write(ciphertext_size_bytes)
+            file_out.write(nonce)
+            file_out.write(ciphertext)
 
     def encrypt_file(self, file_path: Path) -> Path:
         encrypted_path = file_path.with_suffix(file_path.suffix + ".enc")
-        aesgcm = AESGCM(self.__master_key)
-        nonce = os.urandom(12)
 
-        with file_path.open('rb') as file_in:
-            file_content = file_in.read()
-
-        ciphertext = aesgcm.encrypt(nonce, file_content, None)
-
-        with encrypted_path.open('wb') as file_out:
-            file_out.write(nonce + ciphertext)
+        with (
+            file_path.open('rb') as file_in,
+            encrypted_path.open('wb') as file_out
+        ):
+            self._encrypt(file_in, file_out)
 
         # Cleanup plain backup
         if encrypted_path.exists(follow_symlinks=True):
@@ -83,6 +93,12 @@ class Encryption:
             enc_file_path.unlink(missing_ok=True)
 
         return decrypted_file
+
+
+# Public function
+
+def is_encrypted_file(file_path: Path) -> bool:
+    return file_path.suffix == ".enc"
 
 if __name__ == "__main__":
     my_key = Path("/etc/backuper/master.key")

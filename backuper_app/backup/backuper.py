@@ -87,13 +87,15 @@ class Backuper:
         else:
             return backup_path
 
-    def do_backup(self) -> Path:
-        #Validate path
+    def _validate_backup_path(self):
         if not self.target_path.exists():
             raise BackuperError(f"Target path not found for {self.target_path}")
 
         if not self.destination_path.exists():
             raise BackuperError(f"Destination path not found for {self.destination_path}")
+
+    def do_backup(self) -> Path:
+        self._validate_backup_path()
 
         filter_engine = FilterEngine(
             target_path=self.target_path,
