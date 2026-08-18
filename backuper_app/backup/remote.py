@@ -1,6 +1,9 @@
-from paramiko import SSHClient, SSHConfig, SFTPClient
+from paramiko import SSHClient, SSHConfig, SFTPClient, RejectPolicy
 from pathlib import Path
 from backuper_app.exception import ConfigurationError
+
+CONFIG_PATH = Path("~/.ssh/config").expanduser()
+KNOWN_HOST_PATH = Path("~/.ssh/known_hosts").expanduser()
 
 class RemoteBackup:
     def __init__(
@@ -26,7 +29,6 @@ class RemoteBackup:
         hostname: str|None,
         username: str|None,
         port: int|None,
-        identity_file: str | None,
         remote_path: str
     ):
         if not hostname or not hostname.strip():
@@ -45,19 +47,31 @@ class RemoteBackup:
 
     @staticmethod
     def load_ssh_config(alias):
-        config_path = Path("~/.ssh/config").expanduser()
-        config = SSHConfig.from_path(config_path)
+        config = SSHConfig.from_path(CONFIG_PATH)
         host_config = config.lookup(alias)
         return host_config
 
     @staticmethod
-    def create_sftp_connection(hostname: str, username: str, port: int, identity_file: str|None) -> tuple[SSHClient, SFTPClient]:
+    def create_sftp_connection(
+            hostname: str,
+            username: str,
+            port: int,
+            identity_file: list[str] | None,
+    ) -> tuple[SSHClient, SFTPClient]:
+
         ssh = SSHClient()
+
+        # Load known host from disk and reject host not registered in know host
+        ssh.load_host_keys(KNOWN_HOST_PATH)
+        ssh.set_missing_host_key_policy(
+            RejectPolicy()
+        )
+
         ssh.connect(
             hostname,
             username=username,
             port=port,
-            key_filename=identity_file,
+            key_filename=identity_file[0] if identity_file else None,
         )
         return ssh, ssh.open_sftp()
 
@@ -80,7 +94,6 @@ class RemoteBackup:
             self.hostname,
             username=self.username,
             port=self.port,
-            identity_file=self.identity_file,
             remote_path=self.remote_path
         )
 
