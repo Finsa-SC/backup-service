@@ -34,6 +34,10 @@ class Config:
             raise ConfigurationError (
                 f"Invalid TOML configuration in {self._config_path}: {e}"
             )
+        except FileNotFoundError:
+            raise BackuperError(f"{self._config_path} not found")
+        except PermissionError:
+            raise BackuperError(f"You don't have permission to read {self._config_path}")
 
     @staticmethod
     def _set_backup_name(backup_name: str | None, target_backup: Path):
