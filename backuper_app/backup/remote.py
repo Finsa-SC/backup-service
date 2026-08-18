@@ -1,6 +1,6 @@
 from paramiko import SSHClient, SSHConfig, SFTPClient, RejectPolicy
 from pathlib import Path
-from backuper_app.exception import ConfigurationError
+from backuper_app.exception import ConfigurationError, BackuperError
 
 CONFIG_PATH = Path("~/.ssh/config").expanduser()
 KNOWN_HOST_PATH = Path("~/.ssh/known_hosts").expanduser()
@@ -75,6 +75,16 @@ class RemoteBackup:
         )
         return ssh, ssh.open_sftp()
 
+    def is_success_send_backup(self, sftp: SFTPClient) -> bool:
+        try:
+            for path in self.backup_list:
+                remote_backup = f"{self.remote_path}/{path.name}"
+                sftp.stat(remote_backup)
+        except FileNotFoundError:
+            return False
+        else:
+            return True
+
     @staticmethod
     def transfer_backup(sftp: SFTPClient, local_backup: list[Path], remote_path: str) -> None:
         for backup in local_backup:
@@ -107,6 +117,10 @@ class RemoteBackup:
 
         try:
             self.transfer_backup(sftp, local_backup=self.backup_list, remote_path=self.remote_path)
+
+            if not self.is_success_send_backup(sftp):
+                raise BackuperError("File backup to remote failed")
+
         finally:
             sftp.close()
             ssh.close()
