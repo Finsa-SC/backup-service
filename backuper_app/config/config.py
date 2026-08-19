@@ -21,10 +21,13 @@ class BackupConfig:
     key_path: Path
 
     # Remote
-    remote_enabled: bool
-    remote_host: str
-    remote_user: str
-    identity_file: str
+    remote_enabled: bool|None
+    remote_host: str|None
+    remote_user: str|None
+    remote_backup: str # Use str because paramiko sftp put needed str for destination remote path
+    identity_file: str|None
+    alias: str|None
+    remote_port: int = 22
 
     link_mode: str = "follow"
 
@@ -108,6 +111,9 @@ class Config:
             remote_host=remote.get("host", None),
             remote_user=remote.get("user", None),
             identity_file=remote.get("identity_file", None),
+            remote_backup=remote.get("remote_path", None),
+            remote_port=remote.get("remote_port", 22),
+            alias=remote.get("alias"),
 
             link_mode=backup["link_mode"],
         )

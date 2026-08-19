@@ -3,7 +3,7 @@ from importlib.metadata import version
 from pathlib import Path
 from backuper_app.utils import get_logger, format_size, get_file_by_path_or_date, validate_checksum, resolve_checksum_path
 from backuper_app.config import Config
-from backuper_app.backup import Retention, Archive, Backuper, Restore, Verify, Initializer, Encryption, is_encrypted_file
+from backuper_app.backup import Retention, Archive, Backuper, Restore, Verify, Initializer, Encryption, is_encrypted_file, RemoteBackup
 from backuper_app.exception import InvalidArgumetError, ConfigurationError, BackuperError
 
 logger = get_logger(__name__)
@@ -247,8 +247,23 @@ def run_backup(request):
     if encryption:
         encrypted_file_path = encryption.encrypt_file(backup_path)
         logger.info(f"Backup has been encrypted to {encrypted_file_path.name}")
+        backup_path = encrypted_file_path
 
-    #Check retention enabled
+    # Do remote backup if enabled
+    if config.remote_enabled:
+        will_send_remote = [checksum_path, backup_path]
+        remote = RemoteBackup(
+            remote_path=config.remote_backup,
+            backup_list=will_send_remote,
+            hostname=config.remote_host,
+            username=config.remote_user,
+            port=config.remote_port,
+            identity_file=config.identity_file,
+            alias=config.alias,
+        )
+        remote.do_remote()
+
+    # Do retention if enabled
     if config.keep_last:
         backup_retention = Retention(
             destination=config.destination,

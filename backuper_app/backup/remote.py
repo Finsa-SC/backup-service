@@ -1,4 +1,4 @@
-from paramiko import SSHClient, SSHConfig, SFTPClient, RejectPolicy
+from paramiko import SSHClient, SSHConfig, SFTPClient, RejectPolicy, SSHException
 from pathlib import Path
 from backuper_app.exception import ConfigurationError, BackuperError
 
@@ -10,9 +10,9 @@ class RemoteBackup:
             self,
             remote_path:str,
             backup_list: list[Path],
+            port:int,
             hostname:str|None=None,
             username:str|None=None,
-            port:int|None=None,
             identity_file:str|None=None,
             alias:str|None=None
         ):
@@ -28,7 +28,7 @@ class RemoteBackup:
     def validate_ssh_config(
         hostname: str|None,
         username: str|None,
-        port: int|None,
+        port: int,
         remote_path: str
     ):
         if not hostname or not hostname.strip():
@@ -88,18 +88,18 @@ class RemoteBackup:
     @staticmethod
     def transfer_backup(sftp: SFTPClient, local_backup: list[Path], remote_path: str) -> None:
         for backup in local_backup:
-            sftp.put(backup, remote_path)
+            remote_file = f"{remote_path.rstrip('/')}/{backup.name}"
+            sftp.put(backup, remote_file)
 
     def do_remote(self):
         if self.alias and self.alias.strip():
             host_config = self.load_ssh_config(self.alias)
             self.hostname = host_config.get("hostname", None)
             self.username = host_config.get("user", None)
-            self.port = host_config.get("port", None)
+            self.port = host_config.get("port", 22)
             self.identity_file = host_config.get("identityfile", None)
         else:
             self.identity_file = [self.identity_file] if self.identity_file and self.identity_file.strip() else None
-
         self.validate_ssh_config(
             self.hostname,
             username=self.username,
@@ -116,10 +116,24 @@ class RemoteBackup:
         )
 
         try:
-            self.transfer_backup(sftp, local_backup=self.backup_list, remote_path=self.remote_path)
+            # Validate destination path
+            attr = sftp.stat(self.remote_path)
+
+            self.transfer_backup(
+                sftp,
+                local_backup=self.backup_list,
+                remote_path=self.remote_path
+            )
 
             if not self.is_success_send_backup(sftp):
                 raise BackuperError("File backup to remote failed")
+        except FileNotFoundError:
+            raise BackuperError(f"Remote path does not exist: {self.remote_path}")
+        except SSHException as e:
+            raise BackuperError(
+                "Unable to upload backup to remote path",
+                f"'{self.remote_path}'"
+            ) from e
 
         finally:
             sftp.close()
