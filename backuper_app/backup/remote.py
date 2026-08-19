@@ -98,7 +98,7 @@ class RemoteBackup:
             self.port = host_config.get("port", None)
             self.identity_file = host_config.get("identityfile", None)
         else:
-            self.identity_file = self.identity_file if self.identity_file and self.identity_file.strip() else None
+            self.identity_file = [self.identity_file] if self.identity_file and self.identity_file.strip() else None
 
         self.validate_ssh_config(
             self.hostname,

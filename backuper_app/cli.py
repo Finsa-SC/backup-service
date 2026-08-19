@@ -202,7 +202,7 @@ def run_backup(request):
 
     config = load_config(get_config())
 
-    _validate_archive(config.archive_path, config.archive_enable, keep_last=config.keep_last)
+    _validate_archive(config.archive_path, config.archive_enabled, keep_last=config.keep_last)
 
     if not request.dry_run:
         logger.info(f"Starting backup service for {config.backup_name}")
@@ -222,7 +222,7 @@ def run_backup(request):
         compression_type=config.compression,
         link_mode=config.link_mode,
         dry_run=request.dry_run,
-        archive_enabled=config.archive_enable,
+        archive_enabled=config.archive_enabled,
         archive_path=config.archive_path,
         retention=config.keep_last
     )
@@ -263,7 +263,7 @@ def run_backup(request):
             backup_archive = Archive(
                 expired_backups=should_delete,
                 archive_path=config.archive_path,
-                archive_enabled=config.archive_enable,
+                archive_enabled=config.archive_enabled,
             )
             backup_archive.do_archive()
 

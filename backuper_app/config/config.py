@@ -15,10 +15,17 @@ class BackupConfig:
     exclude: list[str] | None
     keep_last: int
     compression: str
-    archive_enable: bool
+    archive_enabled: bool
     archive_path: Path
     encryption_enabled: bool
     key_path: Path
+
+    # Remote
+    remote_enabled: bool
+    remote_host: str
+    remote_user: str
+    identity_file: str
+
     link_mode: str = "follow"
 
 class Config:
@@ -53,6 +60,7 @@ class Config:
         archive = config["archive"]
         config_filter = config["filter"]
         encryption = config['encryption']
+        remote = config['remote']
 
         def _validate_path(key: str, path) -> Path:
             if not path.strip():
@@ -75,7 +83,7 @@ class Config:
         if archive_enabled:
             archive_backup = _validate_path("Archive", archive_backup)
 
-        encryption_enabled =  encryption.get('enabled', False)
+        encryption_enabled = encryption.get('enabled', False)
         key_path = encryption.get('key_path', '')
         if encryption_enabled:
             key_path = _validate_path("Master Key", key_path)
@@ -90,9 +98,16 @@ class Config:
             exclude=config_filter.get("exclude", None),
             keep_last=retention.get("keep_last", None),
             compression=backup.get("compression", None),
-            archive_enable=archive_enabled,
+            archive_enabled=archive_enabled,
             archive_path=archive_backup,
             encryption_enabled=encryption_enabled,
             key_path=key_path,
+
+            # Remote
+            remote_enabled=remote.get("enabled", False),
+            remote_host=remote.get("host", None),
+            remote_user=remote.get("user", None),
+            identity_file=remote.get("identity_file", None),
+
             link_mode=backup["link_mode"],
         )
