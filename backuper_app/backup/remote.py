@@ -19,10 +19,15 @@ class RemoteBackup:
         self.hostname = hostname
         self.username = username
         self.port = port
-        self.identity_file = identity_file
         self.alias = alias
         self.remote_path = remote_path
         self.backup_list = backup_list
+
+        if identity_file:
+            identity_file = Path(identity_file).expanduser()
+            identity_file = str(identity_file)
+        self.identity_file = identity_file
+
 
     @staticmethod
     def validate_ssh_config(
