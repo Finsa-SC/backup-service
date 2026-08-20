@@ -27,3 +27,15 @@ path = "/home/silence-suzuka/backup_test"
 [encryption]
 enabled = false
 key_path = "/etc/backuper/master.key"
+
+[remote]
+key_path = "/etc/backuper/master.key"
+host = "192.168.56.101"
+user = "rikka"
+port = 22   # Default is 22
+identity_file = "~/.ssh/id_ed25519_ubuntu_vm"
+remote_path = "/server/path/destination"
+
+### Or you can just use alias
+### Configuration above will not use if you are using alias
+alias = "ubuntu_vm"
