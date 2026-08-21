@@ -45,7 +45,10 @@ class Initializer:
             if not Path(DEFAULT_CONFIG_PATH / "config.toml").exists():
                 return DEFAULT_CONFIG_PATH / "config.toml"
 
-            file_exists = sorted(DEFAULT_CONFIG_PATH.rglob(f"config-*.toml"))
+            file_exists = sorted(
+                DEFAULT_CONFIG_PATH.rglob(f"config-*.toml"),
+                key=lambda path: int(path.stem.removeprefix("config-"))
+            )
 
             increment = 2
             for i, file in enumerate(file_exists, start=increment):
