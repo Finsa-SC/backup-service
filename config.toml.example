@@ -29,7 +29,6 @@ enabled = false
 key_path = "/etc/backuper/master.key"
 
 [remote]
-key_path = "/etc/backuper/master.key"
 host = "192.168.56.101"
 user = "rikka"
 port = 22   # Default is 22

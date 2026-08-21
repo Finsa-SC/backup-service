@@ -50,6 +50,12 @@ def main():
                     link_mode=argv.link_mode,
                     archive_path=argv.archive_path,
                     key_path=argv.key_path,
+                    remote_host=argv.remote_host,
+                    remote_user=argv.remote_user,
+                    remote_port=argv.remote_port,
+                    remote_identity_file=argv.remote_identity_file,
+                    remote_path=argv.remote_path,
+                    remote_alias=argv.remote_alias,
                 )
                 run_init(request)
             case _:

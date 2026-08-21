@@ -172,6 +172,39 @@ def get_config():
         help="Path to master key to open encrypted backup"
     )
 
+    # Remote
+    init_mode.add_argument(
+        "--remote-host",
+        default=None,
+        help="Remote SSH host.",
+    )
+    init_mode.add_argument(
+        "--remote-user",
+        default=None,
+        help="Remote SSH username.",
+    )
+    init_mode.add_argument(
+        "--remote-port",
+        type=int,
+        default=22,
+        help="Remote SSH port (default: 22).",
+    )
+    init_mode.add_argument(
+        "--remote-identity-file",
+        default=None,
+        help="Path to SSH identity file.",
+    )
+    init_mode.add_argument(
+        "--remote-path",
+        default=None,
+        help="Path to store backups on the remote server.",
+    )
+    init_mode.add_argument(
+        "--remote-alias",
+        default=None,
+        help="SSH config alias.",
+    )
+
     return parser.parse_args()
 
 def load_config(argsv):
@@ -343,14 +376,7 @@ def run_verify(request):
 
 def run_init(request):
     init = Initializer(
-        config_path=request.config,
-        target=request.target,
-        destination=request.destination,
-        retention=request.retention,
-        compression=request.compression,
-        link_mode=request.link_mode,
-        archive_path=request.archive_path,
-        key_path=request.key_path,
+        request
     )
 
     config_path = init.make_init()
