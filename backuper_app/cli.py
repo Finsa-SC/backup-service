@@ -3,7 +3,7 @@ from importlib.metadata import version
 from pathlib import Path
 from backuper_app.utils import get_logger, format_size, get_file_by_path_or_date, validate_checksum, resolve_checksum_path
 from backuper_app.config import Config
-from backuper_app.backup import Retention, Archive, Backuper, Restore, Verify, Initializer, Encryption, is_encrypted_file
+from backuper_app.backup import Retention, Archive, Backuper, Restore, Verify, Initializer, Encryption, is_encrypted_file, RemoteBackup
 from backuper_app.exception import InvalidArgumetError, ConfigurationError, BackuperError
 
 logger = get_logger(__name__)
@@ -172,6 +172,39 @@ def get_config():
         help="Path to master key to open encrypted backup"
     )
 
+    # Remote
+    init_mode.add_argument(
+        "--remote-host",
+        default=None,
+        help="Remote SSH host.",
+    )
+    init_mode.add_argument(
+        "--remote-user",
+        default=None,
+        help="Remote SSH username.",
+    )
+    init_mode.add_argument(
+        "--remote-port",
+        type=int,
+        default=22,
+        help="Remote SSH port (default: 22).",
+    )
+    init_mode.add_argument(
+        "--remote-identity-file",
+        default=None,
+        help="Path to SSH identity file.",
+    )
+    init_mode.add_argument(
+        "--remote-path",
+        default=None,
+        help="Path to store backups on the remote server.",
+    )
+    init_mode.add_argument(
+        "--remote-alias",
+        default=None,
+        help="SSH config alias.",
+    )
+
     return parser.parse_args()
 
 def load_config(argsv):
@@ -202,7 +235,7 @@ def run_backup(request):
 
     config = load_config(get_config())
 
-    _validate_archive(config.archive_path, config.archive_enable, keep_last=config.keep_last)
+    _validate_archive(config.archive_path, config.archive_enabled, keep_last=config.keep_last)
 
     if not request.dry_run:
         logger.info(f"Starting backup service for {config.backup_name}")
@@ -222,7 +255,7 @@ def run_backup(request):
         compression_type=config.compression,
         link_mode=config.link_mode,
         dry_run=request.dry_run,
-        archive_enabled=config.archive_enable,
+        archive_enabled=config.archive_enabled,
         archive_path=config.archive_path,
         retention=config.keep_last
     )
@@ -247,8 +280,23 @@ def run_backup(request):
     if encryption:
         encrypted_file_path = encryption.encrypt_file(backup_path)
         logger.info(f"Backup has been encrypted to {encrypted_file_path.name}")
+        backup_path = encrypted_file_path
 
-    #Check retention enabled
+    # Do remote backup if enabled
+    if config.remote_enabled:
+        will_send_remote = [checksum_path, backup_path]
+        remote = RemoteBackup(
+            remote_path=config.remote_backup,
+            backup_list=will_send_remote,
+            hostname=config.remote_host,
+            username=config.remote_user,
+            port=config.remote_port,
+            identity_file=config.identity_file,
+            alias=config.alias,
+        )
+        remote.do_remote()
+
+    # Do retention if enabled
     if config.keep_last:
         backup_retention = Retention(
             destination=config.destination,
@@ -263,7 +311,7 @@ def run_backup(request):
             backup_archive = Archive(
                 expired_backups=should_delete,
                 archive_path=config.archive_path,
-                archive_enabled=config.archive_enable,
+                archive_enabled=config.archive_enabled,
             )
             backup_archive.do_archive()
 
@@ -328,14 +376,7 @@ def run_verify(request):
 
 def run_init(request):
     init = Initializer(
-        config_path=request.config,
-        target=request.target,
-        destination=request.destination,
-        retention=request.retention,
-        compression=request.compression,
-        link_mode=request.link_mode,
-        archive_path=request.archive_path,
-        key_path=request.key_path,
+        request
     )
 
     config_path = init.make_init()

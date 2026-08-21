@@ -1,33 +1,54 @@
 from pathlib import Path
 
+DEFAULT_CONFIG_PATH: Path = Path("/etc/backuper")
+
 class Initializer:
-    def __init__(
-            self,
-            config_path: Path,
-            target: Path,
-            destination: Path,
-            retention: int|None,
-            compression: str,
-            link_mode: str,
-            archive_path: Path,
-            key_path: Path,
-    ):
-        self.config_path = config_path
-        self.target = target
-        self.destination = destination
-        self.retention = retention
-        self.compression = compression
-        self.link_mode = link_mode
-        self.default_file = Path("/etc/backuper/")
-        self.archive_path = archive_path
-        self.key_path = key_path
+    def __init__(self, request):
+        self.config_path = request.config
+        self.target = request.target
+        self.destination = request.destination
+        self.retention = request.retention
+        self.compression = request.compression
+        self.link_mode = request.link_mode
+        self.archive_path = request.archive_path
+        self.key_path = request.key_path
+
+        # Remote
+        self.remote_host = request.remote_host
+        self.remote_user = request.remote_user
+        self.remote_port = request.remote_port
+        self.remote_identity_file = request.remote_identity_file
+        self.remote_path = request.remote_path
+        self.remote_alias = request.remote_alias
+
+        self.remote_enabled = False
+
+    def _remote_is_enabled(self) -> bool:
+        if self.remote_alias and self.remote_alias.strip():
+            return True
+
+        if not self.remote_host or not self.remote_host.strip():
+            return False
+        if not self.remote_user or not self.remote_user.strip():
+            return False
+        if not self.remote_port or not isinstance(self.remote_port, int):
+            return False
+        if not self.remote_identity_file or not self.remote_identity_file.strip():
+            return False
+        if not self.remote_path or not self.remote_path.strip():
+            return False
+
+        return True
 
     def _resolve_default_name(self) -> Path:
         if not self.config_path:
-            if not Path(self.default_file / "config.toml").exists():
-                return self.default_file / "config.toml"
+            if not Path(DEFAULT_CONFIG_PATH / "config.toml").exists():
+                return DEFAULT_CONFIG_PATH / "config.toml"
 
-            file_exists = sorted(self.default_file.rglob(f"config-*.toml"))
+            file_exists = sorted(
+                DEFAULT_CONFIG_PATH.rglob(f"config-*.toml"),
+                key=lambda path: int(path.stem.removeprefix("config-"))
+            )
 
             increment = 2
             for i, file in enumerate(file_exists, start=increment):
@@ -36,7 +57,7 @@ class Initializer:
                     break
                 else:
                     increment += 1
-            return self.default_file / f"config-{increment}.toml"
+            return DEFAULT_CONFIG_PATH / f"config-{increment}.toml"
 
         return self.config_path
 
@@ -94,6 +115,15 @@ enabled = {'true' if self.archive_path else 'false'}
 [encryption]
 enabled = {'true' if self.key_path else 'false'}
 {self._optional_key("key_path", hint='', value=self.key_path)}
+
+[remote]
+enabled = {self._remote_is_enabled()}
+{self._optional_key("host", hint='', value=self.remote_host)}
+{self._optional_key("user", hint='', value=self.remote_user)}
+{self._optional_key("port", hint='22', value=self.remote_port)}
+{self._optional_key("identity_file", hint='', value=self.remote_identity_file)}
+{self._optional_key("remote_path", hint='', value=self.remote_path)}
+
 """
 
     def make_init(self) -> Path:

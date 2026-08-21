@@ -1,5 +1,5 @@
 from datetime import datetime
-from backuper_app.utils import get_logger
+from backuper_app.utils import get_logger, configure_logging
 from backuper_app.exception import BackuperError, InvalidArgumetError
 from backuper_app.cli import run_backup, run_restore, run_verify, get_config, run_init
 from backuper_app.dto import BackupRequest, RestoreRequest, VerifyRequest, InitRequest
@@ -7,6 +7,9 @@ from backuper_app.dto import BackupRequest, RestoreRequest, VerifyRequest, InitR
 logger = get_logger(__name__)
 
 def main():
+    # Init logging format and policy
+    configure_logging()
+
     try:
         start_time = datetime.now()
         argv = get_config()
@@ -47,6 +50,12 @@ def main():
                     link_mode=argv.link_mode,
                     archive_path=argv.archive_path,
                     key_path=argv.key_path,
+                    remote_host=argv.remote_host,
+                    remote_user=argv.remote_user,
+                    remote_port=argv.remote_port,
+                    remote_identity_file=argv.remote_identity_file,
+                    remote_path=argv.remote_path,
+                    remote_alias=argv.remote_alias,
                 )
                 run_init(request)
             case _:

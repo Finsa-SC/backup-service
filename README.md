@@ -146,7 +146,7 @@ exclude = ["*.tmp", "*.cache"]
 | `compression` | string | Compression method: `gzip` or `zstd` |
 | `keep_last` | integer | Number of backups to retain (0 = keep all) |
 | `link_mode` | string | Symlink handling: `ignore`, `follow`, or `preserve` |
-| `archive_enable` | boolean | Archive expired backups instead of deleting |
+| `archive_enabled` | boolean | Archive expired backups instead of deleting |
 | `archive_path` | path | Directory for archived backups (if enabled) |
 | `include` | array | File patterns to include (optional) |
 | `exclude` | array | File patterns to exclude (optional) |

@@ -56,3 +56,4 @@ systemd/
 test/*
 !test/test.sh
 test_config.toml
+config.toml
