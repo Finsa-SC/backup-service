@@ -167,10 +167,3 @@ class Backuper:
         logger.debug(f"Backup for {self.target_path.name} success with no error found.")
 
         return backup_path
-
-if __name__ == "__main__":
-    try:
-        backuper = Backuper(target_path="/", destination_path="/home/silence-suzuka/backup_test", backup_name="My_Backup")
-        backuper.do_backup()
-    except Exception as e:
-        logger.error(e)
