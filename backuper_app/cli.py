@@ -1,7 +1,7 @@
 import argparse
 from importlib.metadata import version
 from pathlib import Path
-from backuper_app.utils import get_logger, format_size, get_file_by_path_or_date, resolve_checksum_path
+from backuper_app.utils import get_logger, format_size, get_file_by_path_or_date
 from backuper_app.config import Config
 from backuper_app.dto import BackupPlan
 from backuper_app.backup import Retention, Archive, Backuper, Restore, verify_backup, Initializer, Encryption, is_encrypted_file, RemoteBackup
@@ -250,16 +250,21 @@ def run_backup(dry_run: bool):
         target_path=config.target,
         destination_path=config.destination,
         parent_path=parent_path,
-        include=config.include,
-        exclude=config.exclude,
         backup_name=config.backup_name,
         compression_type=config.compression,
+
+        include=config.include,
+        exclude=config.exclude,
+
         link_mode=config.link_mode,
         dry_run=dry_run,
+
+        retention=config.keep_last,
         archive_enabled=config.archive_enabled,
         archive_path=config.archive_path,
-        retention=config.keep_last,
+
         encryption_enabled=config.encryption_enabled,
+
         remote_enabled=config.remote_enabled,
         remote_path=config.remote_path,
     )
@@ -284,6 +289,10 @@ def run_backup(dry_run: bool):
 
     checksum_path = make_hash(backup_path)
     logger.info(f"Checksum generated: {checksum_path.name}")
+
+    if config.file_mode:
+        backup_path.chmod(mode=config.file_mode)
+        logger.info(f"Backup mode has been changed to {oct(config.file_mode)}")
 
     # Validating checksum
     logger.info(f"Validating checksum...")
