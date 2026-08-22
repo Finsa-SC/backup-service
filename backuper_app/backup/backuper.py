@@ -14,18 +14,18 @@ class Backuper:
             self,
             backup_plan
     ):
-        self.backup_plan = backup_plan
+        self.backup_plan        = backup_plan
         self.target_path        = backup_plan.target_path
         self.destination_path   = backup_plan.destination_path
         self.parent_path        = backup_plan.parent_path
         self.backup_name        = backup_plan.backup_name
         self.compression_type   = backup_plan.compression_type
-        self.link_mode          = backup_plan.link_mode
 
         self.exclude            = backup_plan.exclude
         self.include            = backup_plan.include
 
         self.dry_run            = backup_plan.dry_run
+        self.link_mode          = backup_plan.link_mode
 
         self.retention          = backup_plan.retention
         self.archive_enabled    = backup_plan.archive_enabled
@@ -132,7 +132,7 @@ class Backuper:
             compression = resolve_compression_from_config(self.compression_type)
             backup_path = self.destination_path / f"{backup_name}.tar.{compression.suffix}"
 
-            ###Add manifest file
+            ### Add manifest file
             temp_dir_path = create_manifest_data(
                 backup_name=backup_name,
                 target_path=self.target_path,
@@ -143,7 +143,7 @@ class Backuper:
             )
 
             # resolve manifest relative path to store into compression
-            # because if i don't do that manifest path will save as absolute path
+            # because if you don't do that, manifest path will save as absolute path
             manifest_relative_path = Path(temp_dir_path / ".manifest").relative_to(temp_dir_path)
 
             ###Compress backup
@@ -162,7 +162,6 @@ class Backuper:
             # Raise exception if no file match from filter engine, only active when use include config
             from backuper_app.exception import FilterEmptyError
             raise FilterEmptyError(f"No files matched the configured include patterns: {self.include}")
-
 
         logger.debug(f"Backup for {self.target_path.name} success with no error found.")
 
