@@ -268,6 +268,12 @@ def run_backup(request):
     backup_path = backuper.do_backup()
     logger.info(f"Backup created: {backup_path.name} {format_size(backup_path.lstat().st_size)}")
 
+    # Encrypt backup except checksum file
+    if encryption:
+        encrypted_file_path = encryption.encrypt_file(backup_path)
+        logger.info(f"Backup has been encrypted to {encrypted_file_path.name}")
+        backup_path = encrypted_file_path
+
     checksum_path = make_hash(backup_path)
     logger.info(f"Checksum generated: {checksum_path.name}")
 
@@ -275,12 +281,6 @@ def run_backup(request):
     logger.info(f"Validating checksum...")
     validate_checksum(backup_path)
     logger.info(f"Checkum is valid.")
-
-    # Encrypt backup except checksum file
-    if encryption:
-        encrypted_file_path = encryption.encrypt_file(backup_path)
-        logger.info(f"Backup has been encrypted to {encrypted_file_path.name}")
-        backup_path = encrypted_file_path
 
     # Do remote backup if enabled
     if config.remote_enabled:
@@ -338,11 +338,11 @@ def run_restore(request):
                 raise BackuperError("Master key path is invalid")
             encryption = Encryption(key_path)
 
-            archive_file = encryption.decrypt_file(archive_file)
-            logger.info(f"Backup decrypted to {archive_file}")
-
             checksum_path = resolve_checksum_path(archive_file, parent_path)
             validate_checksum(file_path=archive_file, checksum_path=checksum_path)
+
+            archive_file = encryption.decrypt_file(archive_file)
+            logger.info(f"Backup decrypted to {archive_file}")
 
         else:
             validate_checksum(archive_file)
@@ -354,7 +354,7 @@ def run_restore(request):
             archive_path=archive_path
         )
 
-        logger.info(f"Extracting {archive_file}...file_path")
+        logger.info(f"Extracting {archive_file}...")
         extract_path = restore.do_restore()
         logger.info(f"{archive_file.name} has been extract to {extract_path}")
 
