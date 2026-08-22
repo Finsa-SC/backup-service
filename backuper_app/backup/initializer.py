@@ -24,7 +24,7 @@ class Initializer:
         self.remote_enabled = False
 
     def _remote_is_enabled(self) -> bool:
-        if self.remote_alias and not self.remote_alias.strip() and self.remote_path and self.remote_path.strip():
+        if self.remote_alias and self.remote_alias.strip() and self.remote_path and self.remote_path.strip():
             return True
 
         if not self.remote_host or not self.remote_host.strip():
@@ -109,20 +109,31 @@ exclude = [
 {self._optional_key("keep_last", hint=7, value=self.retention)}
 
 [archive]
+
+# Enable local archive storage
 enabled = {'true' if self.archive_path else 'false'}
 {self._optional_key("path", hint='', value=self.archive_path)}
 
 [encryption]
+
+# Enable encryption using the configured master key
 enabled = {'true' if self.key_path else 'false'}
 {self._optional_key("key_path", hint='', value=self.key_path)}
 
 [remote]
+
+# Enable remote backup.
 enabled = {'true' if self._remote_is_enabled() else 'false'}
+
+# Remote server configuration
 {self._optional_key("host", hint='', value=self.remote_host)}
 {self._optional_key("user", hint='', value=self.remote_user)}
 {self._optional_key("port", hint='22', value=self.remote_port)}
 {self._optional_key("identity_file", hint='', value=self.remote_identity_file)}
 {self._optional_key("remote_path", hint='', value=self.remote_path)}
+
+# Or use an ssh alias from ~/.ssh/config.
+# When alias is used, the host configuration above is ignored.
 {self._optional_key("alias", hint='', value=self.remote_alias)}
 """
 
