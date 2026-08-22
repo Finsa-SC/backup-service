@@ -2,7 +2,7 @@ from datetime import datetime
 from backuper_app.utils import get_logger, configure_logging
 from backuper_app.exception import BackuperError, InvalidArgumetError
 from backuper_app.cli import run_backup, run_restore, run_verify, get_config, run_init
-from backuper_app.dto import BackupRequest, RestoreRequest, VerifyRequest, InitRequest
+from backuper_app.dto import RestoreRequest, VerifyRequest, InitRequest
 
 logger = get_logger(__name__)
 
@@ -16,10 +16,7 @@ def main():
 
         match argv.command:
             case "backup":
-                request = BackupRequest(
-                    dry_run=argv.dry_run,
-                )
-                run_backup(request)
+                run_backup(argv.dry_run)
 
             case "restore":
                 request = RestoreRequest(
@@ -43,7 +40,7 @@ def main():
             case "init":
                 request = InitRequest(
                     config=argv.config,
-                    target=argv.target,
+                    target=argv.target_path,
                     destination=argv.destination,
                     retention=argv.retention,
                     compression=argv.compression,

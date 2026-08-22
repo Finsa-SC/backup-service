@@ -8,26 +8,27 @@ logger = get_logger(__name__)
 
 @dataclass
 class BackupConfig:
-    target: Path
-    destination: Path
-    backup_name: str | None
-    include: list[str] | None
-    exclude: list[str] | None
-    keep_last: int
-    compression: str
-    archive_enabled: bool
-    archive_path: Path
+    target          : Path
+    destination     : Path
+    backup_name     : str
+    include         : list[str] | None
+    exclude         : list[str] | None
+    keep_last       : int
+    compression     : str
+    archive_enabled : bool
+    archive_path    : Path
     encryption_enabled: bool
-    key_path: Path
+    key_path        : Path
 
     # Remote
-    remote_enabled: bool|None
-    remote_host: str|None
-    remote_user: str|None
-    remote_backup: str # Use str because paramiko sftp put needed str for destination remote path
-    identity_file: str|None
-    alias: str|None
-    remote_port: int = 22
+    remote_enabled  : bool
+    remote_host     : str|None
+    remote_user     : str|None
+    remote_backup   : str # Use str because paramiko sftp put needed str for destination remote path
+    remote_path     : Path
+    identity_file   : str|None
+    alias           : str|None
+    remote_port     : int = 22
 
     link_mode: str = "follow"
 
@@ -113,6 +114,7 @@ class Config:
             identity_file=remote.get("identity_file", None),
             remote_backup=remote.get("remote_path", None),
             remote_port=remote.get("remote_port", 22),
+            remote_path=remote.get("remote_path"),
             alias=remote.get("alias"),
 
             link_mode=backup["link_mode"],

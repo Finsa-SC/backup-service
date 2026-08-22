@@ -5,7 +5,7 @@ DEFAULT_CONFIG_PATH: Path = Path("/etc/backuper")
 class Initializer:
     def __init__(self, request):
         self.config_path = request.config
-        self.target = request.target
+        self.target = request.target_path
         self.destination = request.destination
         self.retention = request.retention
         self.compression = request.compression

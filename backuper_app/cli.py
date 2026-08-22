@@ -3,6 +3,7 @@ from importlib.metadata import version
 from pathlib import Path
 from backuper_app.utils import get_logger, format_size, get_file_by_path_or_date, validate_checksum, resolve_checksum_path
 from backuper_app.config import Config
+from backuper_app.dto import BackupPlan
 from backuper_app.backup import Retention, Archive, Backuper, Restore, Verify, Initializer, Encryption, is_encrypted_file, RemoteBackup
 from backuper_app.exception import InvalidArgumetError, ConfigurationError, BackuperError
 
@@ -230,14 +231,14 @@ def _validate_archive(archive_path: Path|None, archive_enable: bool, keep_last: 
     if not keep_last and archive_enable:
         raise ConfigurationError(f"Archive is enabled but keep last is not set")
 
-def run_backup(request):
+def run_backup(dry_run: bool):
     from backuper_app.utils.checksum import make_hash
 
     config = load_config(get_config())
 
     _validate_archive(config.archive_path, config.archive_enabled, keep_last=config.keep_last)
 
-    if not request.dry_run:
+    if not dry_run:
         logger.info(f"Starting backup service for {config.backup_name}")
         logger.info(f"Source: {config.target}")
         logger.info(f"Destination: {config.destination}")
@@ -245,7 +246,7 @@ def run_backup(request):
 
     parent_path = config.target.parent
 
-    backuper = Backuper(
+    backup_plan = BackupPlan(
         target_path=config.target,
         destination_path=config.destination,
         parent_path=parent_path,
@@ -254,10 +255,17 @@ def run_backup(request):
         backup_name=config.backup_name,
         compression_type=config.compression,
         link_mode=config.link_mode,
-        dry_run=request.dry_run,
+        dry_run=dry_run,
         archive_enabled=config.archive_enabled,
         archive_path=config.archive_path,
-        retention=config.keep_last
+        retention=config.keep_last,
+        encryption_enabled=config.encryption_enabled,
+        remote_enabled=config.remote_enabled,
+        remote_path=config.remote_path,
+    )
+
+    backuper = Backuper(
+        backup_plan
     )
 
     # Init encryption here to validate key path before backuping
