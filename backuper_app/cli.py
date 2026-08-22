@@ -1,9 +1,10 @@
 import argparse
 from importlib.metadata import version
 from pathlib import Path
-from backuper_app.utils import get_logger, format_size, get_file_by_path_or_date, validate_checksum, resolve_checksum_path
+from backuper_app.utils import get_logger, format_size, get_file_by_path_or_date, resolve_checksum_path
 from backuper_app.config import Config
-from backuper_app.backup import Retention, Archive, Backuper, Restore, Verify, Initializer, Encryption, is_encrypted_file, RemoteBackup
+from backuper_app.dto import BackupPlan
+from backuper_app.backup import Retention, Archive, Backuper, Restore, verify_backup, Initializer, Encryption, is_encrypted_file, RemoteBackup
 from backuper_app.exception import InvalidArgumetError, ConfigurationError, BackuperError
 
 logger = get_logger(__name__)
@@ -230,14 +231,14 @@ def _validate_archive(archive_path: Path|None, archive_enable: bool, keep_last: 
     if not keep_last and archive_enable:
         raise ConfigurationError(f"Archive is enabled but keep last is not set")
 
-def run_backup(request):
+def run_backup(dry_run: bool):
     from backuper_app.utils.checksum import make_hash
 
     config = load_config(get_config())
 
     _validate_archive(config.archive_path, config.archive_enabled, keep_last=config.keep_last)
 
-    if not request.dry_run:
+    if not dry_run:
         logger.info(f"Starting backup service for {config.backup_name}")
         logger.info(f"Source: {config.target}")
         logger.info(f"Destination: {config.destination}")
@@ -245,7 +246,7 @@ def run_backup(request):
 
     parent_path = config.target.parent
 
-    backuper = Backuper(
+    backup_plan = BackupPlan(
         target_path=config.target,
         destination_path=config.destination,
         parent_path=parent_path,
@@ -254,10 +255,17 @@ def run_backup(request):
         backup_name=config.backup_name,
         compression_type=config.compression,
         link_mode=config.link_mode,
-        dry_run=request.dry_run,
+        dry_run=dry_run,
         archive_enabled=config.archive_enabled,
         archive_path=config.archive_path,
-        retention=config.keep_last
+        retention=config.keep_last,
+        encryption_enabled=config.encryption_enabled,
+        remote_enabled=config.remote_enabled,
+        remote_path=config.remote_path,
+    )
+
+    backuper = Backuper(
+        backup_plan
     )
 
     # Init encryption here to validate key path before backuping
@@ -268,19 +276,19 @@ def run_backup(request):
     backup_path = backuper.do_backup()
     logger.info(f"Backup created: {backup_path.name} {format_size(backup_path.lstat().st_size)}")
 
-    checksum_path = make_hash(backup_path)
-    logger.info(f"Checksum generated: {checksum_path.name}")
-
-    # Validating checksum
-    logger.info(f"Validating checksum...")
-    validate_checksum(backup_path)
-    logger.info(f"Checkum is valid.")
-
     # Encrypt backup except checksum file
     if encryption:
         encrypted_file_path = encryption.encrypt_file(backup_path)
         logger.info(f"Backup has been encrypted to {encrypted_file_path.name}")
         backup_path = encrypted_file_path
+
+    checksum_path = make_hash(backup_path)
+    logger.info(f"Checksum generated: {checksum_path.name}")
+
+    # Validating checksum
+    logger.info(f"Validating checksum...")
+    verify_backup(backup_path, config.key_path)
+    logger.info(f"Checkum is valid.")
 
     # Do remote backup if enabled
     if config.remote_enabled:
@@ -327,25 +335,25 @@ def run_restore(request):
     if _valid_input_archive(file_path, date, archive_path=archive_path):
         # Resolve file from path or date
         archive_file = get_file_by_path_or_date(file_path, date=date, archive_path=archive_path)
-        parent_path = archive_file.parent
 
-        # Decrypt file if file is encrypted
+        # If encrypted backup but missing key path argument
         if is_encrypted_file(archive_file) and not key_path:
             raise InvalidArgumetError("Backup is encrypted but missing --key-path argument to open backup")
 
+        # If encrypted backup
         elif is_encrypted_file(archive_file):
             if not Path(key_path).exists():
                 raise BackuperError("Master key path is invalid")
             encryption = Encryption(key_path)
 
+            verify_backup(archive_file, key_path)
+
             archive_file = encryption.decrypt_file(archive_file)
             logger.info(f"Backup decrypted to {archive_file}")
 
-            checksum_path = resolve_checksum_path(archive_file, parent_path)
-            validate_checksum(file_path=archive_file, checksum_path=checksum_path)
-
+        # If normal backup
         else:
-            validate_checksum(archive_file)
+            verify_backup(archive_file)
 
         logger.info(f"Restoring {archive_file}...")
         restore = Restore(
@@ -354,7 +362,7 @@ def run_restore(request):
             archive_path=archive_path
         )
 
-        logger.info(f"Extracting {archive_file}...file_path")
+        logger.info(f"Extracting {archive_file}...")
         extract_path = restore.do_restore()
         logger.info(f"{archive_file.name} has been extract to {extract_path}")
 
@@ -366,11 +374,10 @@ def run_restore(request):
 def run_verify(request):
     if _valid_input_archive(file=request.file_path, date=request.date, archive_path=request.archive_path):
         file_path = get_file_by_path_or_date(request.file_path, request.archive_path, request.date)
-        verify = Verify(
+        is_valid = verify_backup(
             file_path=file_path,
             key_path=request.key_path
         )
-        is_valid = verify.do_verify()
         if is_valid:
             logger.info(f"Archive verification passed for {file_path.name}")
 

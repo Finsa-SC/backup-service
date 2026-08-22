@@ -2,6 +2,7 @@ import subprocess, datetime
 from pathlib import Path
 from backuper_app.utils import get_logger, not_enough_space, analyze_estimate_size, get_space_info, format_size
 from backuper_app.exception import NotEnoughDiskSpaceError, BackuperError
+from backuper_app.backup.analyzer import Analyzer
 from .filter_engine import FilterEngine
 from .compression import resolve_compression_from_config
 from .manifest import create_manifest_data
@@ -11,31 +12,29 @@ logger = get_logger(__name__)
 class Backuper:
     def __init__(
             self,
-            target_path: Path,
-            destination_path: Path,
-            parent_path: Path,
-            include: list[str] | None,
-            exclude: list[str] | None,
-            backup_name=None,
-            compression_type: str = "zstd",
-            link_mode: str = "follow",
-            dry_run: bool = False,
-            archive_enabled: bool = False,
-            archive_path: Path | None = None,
-            retention: int | None = None
+            backup_plan
     ):
-        self.target_path = target_path
-        self.destination_path = destination_path
-        self.parent_path = parent_path
-        self.backup_name = backup_name
-        self.compression_type = compression_type
-        self.link_mode = link_mode
-        self.exclude = exclude
-        self.include = include
-        self.dry_run = dry_run
-        self.archive_enabled = archive_enabled
-        self.archive_path = archive_path
-        self.retention = retention
+        self.backup_plan = backup_plan
+        self.target_path        = backup_plan.target_path
+        self.destination_path   = backup_plan.destination_path
+        self.parent_path        = backup_plan.parent_path
+        self.backup_name        = backup_plan.backup_name
+        self.compression_type   = backup_plan.compression_type
+        self.link_mode          = backup_plan.link_mode
+
+        self.exclude            = backup_plan.exclude
+        self.include            = backup_plan.include
+
+        self.dry_run            = backup_plan.dry_run
+
+        self.retention          = backup_plan.retention
+        self.archive_enabled    = backup_plan.archive_enabled
+        self.archive_path       = backup_plan.archive_path
+
+        self.encryption_enabled = backup_plan.encryption_enabled
+
+        self.remote_enabled     = backup_plan.remote_enabled
+        self.remote_path        = backup_plan.remote_path
 
         if not self.target_path.is_relative_to(self.parent_path):
             raise BackuperError(f"Mismatch target path and parent path: parent={self.parent_path} target={self.target_path}")
@@ -106,20 +105,10 @@ class Backuper:
         backup_list, backup_total = filter_engine.do_filtering()
 
         if self.dry_run:
-            from .analyzer import Analyzer
-
             analyzer = Analyzer(
-                self.target_path,
-                destination=self.destination_path,
-                files=backup_list,
-                backup_total=backup_total,
-                compression_type=self.compression_type,
-                link_mode=self.link_mode,
-                include=self.include,
-                exclude=self.exclude,
-                archive_enabled=self.archive_enabled,
-                archive_path=self.archive_path,
-                retention=self.retention,
+                backup_list,
+                backup_total,
+                self.backup_plan
             )
             analyzer.analyze_statistic()
             exit(0)
@@ -178,10 +167,3 @@ class Backuper:
         logger.debug(f"Backup for {self.target_path.name} success with no error found.")
 
         return backup_path
-
-if __name__ == "__main__":
-    try:
-        backuper = Backuper(target_path="/", destination_path="/home/silence-suzuka/backup_test", backup_name="My_Backup")
-        backuper.do_backup()
-    except Exception as e:
-        logger.error(e)

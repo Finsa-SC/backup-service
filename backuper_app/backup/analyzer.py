@@ -6,29 +6,29 @@ logger = get_logger(__name__)
 class Analyzer:
     def __init__(
             self,
-            target_path: Path,
-            destination: Path,
             files: list[Path],
             backup_total: int,
-            compression_type: str,
-            link_mode: str,
-            archive_enabled: bool,
-            archive_path: Path|None,
-            include: list[str],
-            exclude: list[str],
-            retention: int | None,
+            backup_plan,
     ):
-        self.target = target_path
-        self.destination = destination
-        self.files = files
-        self.backup_total = backup_total
-        self.compression = compression_type
-        self.link_mode = link_mode
-        self.archive_enabled = archive_enabled
-        self.archive_path = archive_path
-        self.include = include
-        self.exclude = exclude
-        self.retention = retention
+        self.files              = files
+        self.backup_total       = backup_total
+
+        self.target             = backup_plan.target_path
+        self.destination        = backup_plan.destination_path
+        self.compression        = backup_plan.compression_type
+        self.link_mode          = backup_plan.link_mode
+
+        self.include            = backup_plan.include
+        self.exclude            = backup_plan.exclude
+
+        self.retention          = backup_plan.retention
+        self.archive_enabled    = backup_plan.archive_enabled
+        self.archive_path       = backup_plan.archive_path
+
+        self.encryption_enabled = backup_plan.encryption_enabled
+
+        self.remote_enabled     = backup_plan.remote_enabled
+        self.remote_path        = backup_plan.remote_path
 
     def get_file_statistic(self) -> dict[str, int]:
         mapping = dict(file=0, directory=0, symlink=0, socket=0, unknown=0)
@@ -81,11 +81,14 @@ class Analyzer:
         #Action
         logger.info(f"""
         Action
-        Manifest    : Yes
-        Checksum    : Yes
-        Archive     : {self.archive_enabled}
-        Archive Path: {self.archive_path if self.archive_enabled and self.archive_path.is_dir() else "-"}
-        Keep last   : {self.retention if self.retention else '-'}
+        Manifest     : Yes
+        Checksum     : Yes
+        Encryption   : {self.encryption_enabled} 
+        Archive      : {self.archive_enabled}
+        Archive Path : {self.archive_path if self.archive_enabled and self.archive_path.is_dir() else "-"}
+        Keep last    : {self.retention if self.retention else '-'}
+        Remote       : {self.remote_enabled}
+        Remote Path  : {self.remote_path if self.remote_path else "-"}
         """)
 
         logger.info("""

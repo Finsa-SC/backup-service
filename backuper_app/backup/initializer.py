@@ -4,9 +4,9 @@ DEFAULT_CONFIG_PATH: Path = Path("/etc/backuper")
 
 class Initializer:
     def __init__(self, request):
-        self.config_path = request.config
-        self.target = request.target
-        self.destination = request.destination
+        self.config_path = request.config_path
+        self.target = request.target_path
+        self.destination = request.destination_path
         self.retention = request.retention
         self.compression = request.compression
         self.link_mode = request.link_mode
@@ -24,7 +24,7 @@ class Initializer:
         self.remote_enabled = False
 
     def _remote_is_enabled(self) -> bool:
-        if self.remote_alias and self.remote_alias.strip():
+        if self.remote_alias and self.remote_alias.strip() and self.remote_path and self.remote_path.strip():
             return True
 
         if not self.remote_host or not self.remote_host.strip():
@@ -109,21 +109,32 @@ exclude = [
 {self._optional_key("keep_last", hint=7, value=self.retention)}
 
 [archive]
+
+# Enable local archive storage
 enabled = {'true' if self.archive_path else 'false'}
 {self._optional_key("path", hint='', value=self.archive_path)}
 
 [encryption]
+
+# Enable encryption using the configured master key
 enabled = {'true' if self.key_path else 'false'}
 {self._optional_key("key_path", hint='', value=self.key_path)}
 
 [remote]
-enabled = {self._remote_is_enabled()}
+
+# Enable remote backup.
+enabled = {'true' if self._remote_is_enabled() else 'false'}
+
+# Remote server configuration
 {self._optional_key("host", hint='', value=self.remote_host)}
 {self._optional_key("user", hint='', value=self.remote_user)}
 {self._optional_key("port", hint='22', value=self.remote_port)}
 {self._optional_key("identity_file", hint='', value=self.remote_identity_file)}
 {self._optional_key("remote_path", hint='', value=self.remote_path)}
 
+# Or use an ssh alias from ~/.ssh/config.
+# When alias is used, the host configuration above is ignored.
+{self._optional_key("alias", hint='', value=self.remote_alias)}
 """
 
     def make_init(self) -> Path:
