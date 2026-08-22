@@ -142,7 +142,7 @@ exclude = ["*.tmp", "*.cache"]
 |--------|------|-------------|
 | `backup_name` | string | Name identifier for this backup job |
 | `target` | path | Source directory/file to backup |
-| `destination` | path | Directory where backups are stored |
+| `destination_path` | path | Directory where backups are stored |
 | `compression` | string | Compression method: `gzip` or `zstd` |
 | `keep_last` | integer | Number of backups to retain (0 = keep all) |
 | `link_mode` | string | Symlink handling: `ignore`, `follow`, or `preserve` |

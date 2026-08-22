@@ -39,9 +39,9 @@ def main():
 
             case "init":
                 request = InitRequest(
-                    config=argv.config,
-                    target=argv.target_path,
-                    destination=argv.destination,
+                    config_path=argv.config,
+                    target_path=argv.target,
+                    destination_path=argv.destination,
                     retention=argv.retention,
                     compression=argv.compression,
                     link_mode=argv.link_mode,

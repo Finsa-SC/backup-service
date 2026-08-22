@@ -17,12 +17,16 @@ class Analyzer:
         self.destination        = backup_plan.destination_path
         self.compression        = backup_plan.compression_type
         self.link_mode          = backup_plan.link_mode
-        self.archive_enabled    = backup_plan.archive_enabled
-        self.archive_path       = backup_plan.archive_path
+
         self.include            = backup_plan.include
         self.exclude            = backup_plan.exclude
+
         self.retention          = backup_plan.retention
+        self.archive_enabled    = backup_plan.archive_enabled
+        self.archive_path       = backup_plan.archive_path
+
         self.encryption_enabled = backup_plan.encryption_enabled
+
         self.remote_enabled     = backup_plan.remote_enabled
         self.remote_path        = backup_plan.remote_path
 

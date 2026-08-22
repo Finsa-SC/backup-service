@@ -336,10 +336,12 @@ def run_restore(request):
         # Resolve file from path or date
         archive_file = get_file_by_path_or_date(file_path, date=date, archive_path=archive_path)
 
+        # If encrypted backup but missing key path argument
         if is_encrypted_file(archive_file) and not key_path:
             raise InvalidArgumetError("Backup is encrypted but missing --key-path argument to open backup")
 
-        else:
+        # If encrypted backup
+        elif is_encrypted_file(archive_file):
             if not Path(key_path).exists():
                 raise BackuperError("Master key path is invalid")
             encryption = Encryption(key_path)
@@ -349,6 +351,9 @@ def run_restore(request):
             archive_file = encryption.decrypt_file(archive_file)
             logger.info(f"Backup decrypted to {archive_file}")
 
+        # If normal backup
+        else:
+            verify_backup(archive_file)
 
         logger.info(f"Restoring {archive_file}...")
         restore = Restore(

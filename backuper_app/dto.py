@@ -36,9 +36,9 @@ class VerifyRequest:
 
 @dataclass(frozen=True)
 class InitRequest:
-    config                  : str
-    target                  : Path
-    destination             : Path
+    config_path             : str
+    target_path             : Path
+    destination_path        : Path
     retention               : int
     compression             : str
     link_mode               : str
