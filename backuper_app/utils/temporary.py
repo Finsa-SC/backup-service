@@ -19,8 +19,8 @@ class TemporaryWorkspace:
         self.clean_up()
         return False
 
-    def _create_temp_workspace(self, workpace_name: str) -> Path:
-        temp_workspace =  Path(self._root / workpace_name)
+    def _create_temp_workspace(self, workspace_name: str) -> Path:
+        temp_workspace =  Path(self._root / workspace_name)
         temp_workspace.mkdir(parents=True, exist_ok=True)
 
         return temp_workspace
@@ -32,10 +32,10 @@ class TemporaryWorkspace:
         return workspace_path
 
     def get_workspace_path(self, workspace):
-        found_workpace = self.workspaces.get(workspace, None)
+        found_workspace = self.workspaces.get(workspace, None)
 
-        if found_workpace:
-            return found_workpace
+        if found_workspace:
+            return found_workspace
         else:
             raise BackuperError(f"Workpace not found for {workspace}")
 
