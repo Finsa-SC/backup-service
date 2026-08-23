@@ -1,4 +1,4 @@
-import os, hashlib, struct, tempfile
+import os, hashlib, struct
 from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from pathlib import Path

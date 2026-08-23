@@ -1,7 +1,6 @@
 import json
 from pathlib import Path
 from datetime import datetime
-from tempfile import TemporaryDirectory
 
 #Return temporary directory path
 def make_manifest(workspace_path: Path, data: dict) -> Path:
@@ -31,10 +30,3 @@ def create_manifest_data(
     )
 
     return make_manifest(workspace_path, manifest_data)
-
-if __name__ == "__main__":
-    path = create_manifest_data("agus", Path("/home"), include=[".gitignore"], exclude=[".venv"])
-    print(path)
-    with path.open("r") as file:
-        print(file.read())
-    path.unlink()
