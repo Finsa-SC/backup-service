@@ -4,7 +4,10 @@ from backuper_app.exception import BackuperError
 
 class TemporaryWorkspace:
     def __init__(self, parent_name: str):
-        self._temp_dir = TemporaryDirectory(prefix=f"{parent_name}-", delete=False)
+        self._temp_dir = TemporaryDirectory(
+            prefix=f"{parent_name}-",
+            delete=False
+        )
         self._root = Path(self._temp_dir.name)
 
         self.workspaces: dict = {}
@@ -24,7 +27,6 @@ class TemporaryWorkspace:
 
     def new_workpace(self, workspace: str) -> Path:
         workspace_path = self._create_temp_workspace(workspace)
-
         self.workspaces[workspace] = workspace_path
 
         return workspace_path

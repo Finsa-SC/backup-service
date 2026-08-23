@@ -151,9 +151,6 @@ class Backuper:
 
             # resolve manifest relative path to store into compression
             # because if you don't do that, manifest path will save as absolute path
-            print(f"Parent: {workspace_path}")
-            print(f"Manifest: {manifest_path}")
-            print(f"Manifest: {manifest_path.name}")
             manifest_relative_path = manifest_path.relative_to(workspace_path)
 
             ###Compress backup

@@ -30,7 +30,7 @@ def main():
                         archive_path=argv.archive_path,
                         key_path=argv.key_path,
                     )
-                    run_restore(request)
+                    run_restore(request, tmp_workspace)
 
                 case "verify":
                     request = VerifyRequest(

@@ -3,6 +3,7 @@ from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from pathlib import Path
 from backuper_app.exception import EncryptionError, BackuperError
+from backuper_app.utils import TemporaryWorkspace
 
 MIN_ENCRYPTED_SIZE = 12 + 16
 CHUNK_SIZE = 8 * 1024 * 1024
@@ -86,9 +87,8 @@ class Encryption:
 
         return encrypted_path
 
-    def decrypt_file(self, enc_file_path: Path) -> Path:
-        with tempfile.TemporaryDirectory(delete=False) as temp_dir:
-            dir_path = Path(temp_dir)
+    def decrypt_file(self, enc_file_path: Path, workspace: TemporaryWorkspace) -> Path:
+        dir_path = workspace.new_workpace("decrypt_file")
 
         file_name = enc_file_path.with_name(enc_file_path.name.removesuffix(".enc"))
         decrypted_file = dir_path / file_name.name
@@ -113,12 +113,3 @@ class Encryption:
 
 def is_encrypted_file(file_path: Path) -> bool:
     return file_path.suffix == ".enc"
-
-if __name__ == "__main__":
-    my_key = Path("/etc/backuper/master.key")
-    my_file = Path("/home/silence-suzuka/backup_test/playground_20260807_140704.tar.gz")
-    my_enc = my_file.with_suffix(my_file.suffix + ".enc")
-    enc = Encryption(my_key)
-
-    # enc.encrypt_file(my_file)
-    enc.decrypt_file(my_enc)

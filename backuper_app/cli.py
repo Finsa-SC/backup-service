@@ -333,7 +333,10 @@ def run_backup(dry_run: bool, workspace: TemporaryWorkspace):
             )
             backup_archive.do_archive()
 
-def run_restore(request):
+def run_restore(
+        request,
+        workspace
+):
     target = request.file_path or request.date
     logger.info(f"Verifying {target}")
     file_path = request.file_path
@@ -358,7 +361,7 @@ def run_restore(request):
 
             verify_backup(archive_file, key_path)
 
-            archive_file = encryption.decrypt_file(archive_file)
+            archive_file = encryption.decrypt_file(archive_file, workspace)
             logger.info(f"Backup decrypted to {archive_file}")
 
         # If normal backup
