@@ -1,6 +1,7 @@
 import subprocess, datetime
 from pathlib import Path
-from backuper_app.utils import get_logger, not_enough_space, analyze_estimate_size, get_space_info, format_size
+from backuper_app.utils import get_logger, not_enough_space, analyze_estimate_size, get_space_info, format_size, \
+    TemporaryWorkspace
 from backuper_app.exception import NotEnoughDiskSpaceError, BackuperError
 from backuper_app.backup.analyzer import Analyzer
 from .filter_engine import FilterEngine
@@ -12,7 +13,8 @@ logger = get_logger(__name__)
 class Backuper:
     def __init__(
             self,
-            backup_plan
+            backup_plan,
+            workspace: TemporaryWorkspace,
     ):
         self.backup_plan        = backup_plan
         self.target_path        = backup_plan.target_path
@@ -36,6 +38,8 @@ class Backuper:
         self.remote_enabled     = backup_plan.remote_enabled
         self.remote_path        = backup_plan.remote_path
 
+        self.workspace          = workspace
+
         if not self.target_path.is_relative_to(self.parent_path):
             raise BackuperError(f"Mismatch target path and parent path: parent={self.parent_path} target={self.target_path}")
 
@@ -51,7 +55,7 @@ class Backuper:
             compression,
             backup_path: Path,
             backup_list: list[Path],
-            temp_dir_path: Path,
+            workspace_path: Path,
             manifest_relative_path: Path,
     ) -> Path:
         str_command = [
@@ -69,7 +73,7 @@ class Backuper:
         # Insert manifest into compression command
         manifest_command = [
             "-C",
-            str(temp_dir_path),
+            str(workspace_path),
             str(manifest_relative_path),
         ]
         str_command.extend(manifest_command)
@@ -132,32 +136,35 @@ class Backuper:
             compression = resolve_compression_from_config(self.compression_type)
             backup_path = self.destination_path / f"{backup_name}.tar.{compression.suffix}"
 
-            ### Add manifest file
-            temp_dir_path = create_manifest_data(
-                backup_name=backup_name,
-                target_path=self.target_path,
-                include=self.include if self.include else [],
-                exclude=self.exclude if self.exclude else [],
-                compression=self.compression_type,
-                link_mode=self.link_mode,
+            workspace_path = self.workspace.new_workpace("manifest")
+
+            ### create manifest file and get manifest path
+            manifest_path = create_manifest_data(
+                workspace_path  = workspace_path,
+                backup_name     = backup_name,
+                target_path     = self.target_path,
+                include         = self.include if self.include else [],
+                exclude         = self.exclude if self.exclude else [],
+                compression     = self.compression_type,
+                link_mode       = self.link_mode,
             )
 
             # resolve manifest relative path to store into compression
             # because if you don't do that, manifest path will save as absolute path
-            manifest_relative_path = Path(temp_dir_path / ".manifest").relative_to(temp_dir_path)
+            print(f"Parent: {workspace_path}")
+            print(f"Manifest: {manifest_path}")
+            print(f"Manifest: {manifest_path.name}")
+            manifest_relative_path = manifest_path.relative_to(workspace_path)
 
             ###Compress backup
             backup_path = self.compress(
                 compression,
                 backup_path=backup_path,
                 backup_list=backup_list,
-                temp_dir_path=temp_dir_path,
+                workspace_path=workspace_path,
                 manifest_relative_path=manifest_relative_path,
             )
 
-            # Remove temporary manifest
-            import shutil
-            shutil.rmtree(temp_dir_path)
         else:
             # Raise exception if no file match from filter engine, only active when use include config
             from backuper_app.exception import FilterEmptyError
