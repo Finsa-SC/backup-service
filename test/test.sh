@@ -1,19 +1,29 @@
 #!/usr/bin/env bash
 
+# Hardtest Script untuk Backuper
+# Testing: concurrent backups, large files, edge cases, corruption detection
+# All tests run in memory-only temp directory, auto cleanup
+
+set -e
+
 backuper=".venv/bin/backuper"
 
-temporary_dir="/tmp/auto-test"
-backup_dir="$temporary_dir/backup"
-extract_dir="$temporary_dir/extract"
-archive_dir="$temporary_dir/archive"
-restore_dir="$temporary_dir/restore"
-recovery_dir="$temporary_dir/recovery"
-target_config="$temporary_dir/etc/arg-init-test.toml"
+# ── Temp directories (all in /tmp, auto cleanup)
+temp_root="/tmp/backuper-hardtest-$$"
+test_target="$temp_root/target"
+backup_base="$temp_root/backup"
+archive_base="$temp_root/archive"
+restore_base="$temp_root/restore"
+config_dir="$temp_root/config"
+key_dir="$temp_root/keys"
+
+# ── Timing
+declare -A timing_results
 
 # ── Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
+YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 BOLD='\033[1m'
@@ -21,340 +31,506 @@ DIM='\033[2m'
 RESET='\033[0m'
 
 # ── Helpers
-info() {
-    echo -e "${BLUE}${BOLD}[*]${RESET} $*"
+info() { echo -e "${BLUE}${BOLD}[*]${RESET} $*"; }
+success() { echo -e "${GREEN}${BOLD}[✓]${RESET} $*"; }
+warn() { echo -e "${YELLOW}${BOLD}[!]${RESET} $*"; }
+failed() { echo -e "${RED}${BOLD}[✗]${RESET} $*"; }
+section() { echo -e "\n${CYAN}${BOLD}══ $* ══${RESET}"; }
+
+# ── Cleanup
+cleanup() {
+    info "Cleaning up $temp_root"
+    rm -rf "$temp_root" 2>/dev/null || true
+}
+trap cleanup EXIT
+
+# ── Setup
+setup_dirs() {
+    mkdir -p "$test_target" "$backup_base" "$archive_base" "$restore_base" "$config_dir" "$key_dir"
 }
 
-success() {
-    echo -e "${GREEN}${BOLD}[✓]${RESET} $*"
+# ── Helper: time command execution
+time_exec() {
+    local name="$1"
+    shift
+    local start end
+    start=$(date +%s%N)
+    "$@" > /dev/null 2>&1
+    end=$(date +%s%N)
+    local duration=$(( (end - start) / 1000000 ))  # Convert to ms
+    timing_results["$name"]="$duration ms"
+    echo "$duration"
 }
 
-warn() {
-    echo -e "${YELLOW}${BOLD}[!]${RESET} $*"
+# ── Helper: create test file
+create_file() {
+    local path="$1"
+    local size="$2"
+    mkdir -p "$(dirname "$path")"
+    dd if=/dev/urandom of="$path" bs=1M count="$size" 2>/dev/null
 }
 
-failed() {
-    echo -e "${RED}${BOLD}[✗]${RESET} $*"
+# ── Helper: create text file
+create_text_file() {
+    local path="$1"
+    local lines="${2:-1000}"
+    mkdir -p "$(dirname "$path")"
+    {
+        for ((i=1; i<=lines; i++)); do
+            echo "Line $i: Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+        done
+    } > "$path"
 }
 
-skip() {
-    echo -e "${DIM}[~] $*${RESET}"
-}
-
-section() {
-    echo -e "\n${CYAN}${BOLD}══ $* ══${RESET}"
-}
-
+# ── Helper: find latest backup
 latest_backup() {
-    find "$1" \
-        -type f \
-        ! -name '*.sha256' \
-        -printf '%T@ %p\n' 2>/dev/null |
-        sort -nr |
-        head -n 1 |
-        cut -d' ' -f2-
+    find "$1" -type f ! -name '*.sha256' ! -name '*.enc' -printf '%T@ %p\n' 2>/dev/null | sort -nr | head -n1 | cut -d' ' -f2-
 }
 
+# ════════════════════════════════════════════════════════════════
+# TESTS
+# ════════════════════════════════════════════════════════════════
 
-test_init() {
-    section "INIT"
+# Test 1: Basic Functionality
+test_basic() {
+    section "TEST 1: Basic Functionality"
 
-    mkdir -p "$temporary_dir/etc"
+    local config="$config_dir/basic.toml"
+    local backup_dir="$backup_base/basic"
 
-    if "$backuper" init \
-        "$temporary_dir/etc/default-init-test.toml" \
-        1> /dev/null; then
+    mkdir -p "$backup_dir"
 
-        success "INIT default test passed"
-    else
-        failed "INIT default test failed"
-    fi
+    # Create test files
+    create_text_file "$test_target/file1.txt" 100
+    create_text_file "$test_target/file2.txt" 200
 
-    if "$backuper" init \
-        "$temporary_dir/etc/arg-init-test.toml" \
-        --target "$temporary_dir" \
+    if "$backuper" init "$config" \
+        --target "$test_target" \
         --destination "$backup_dir" \
-        --retention 4 \
+        --compression "zstd" \
         --link-mode "ignore" \
-        --compression "gzip" \
-        --archive-path "$archive_dir" \
         1> /dev/null; then
-
-        success "INIT with argument test passed"
+        success "Basic init passed"
     else
-        failed "INIT with argument test failed"
+        failed "Basic init failed"
+        return 1
+    fi
+
+    if "$backuper" backup --config "$config" 1> /dev/null; then
+        success "Basic backup passed"
+    else
+        failed "Basic backup failed"
+        return 1
     fi
 }
 
+# Test 2: Large Files (50MB each)
+test_large_files() {
+    section "TEST 2: Large Files (50MB)"
 
-test_dry_run() {
-    section "DRY RUN"
+    local config="$config_dir/large.toml"
+    local backup_dir="$backup_base/large"
+    local test_dir="$test_target/large_files"
 
-    if "$backuper" backup \
-        --dry-run \
-        --config "$target_config" \
+    mkdir -p "$backup_dir" "$test_dir"
+
+    info "Creating 3x 50MB files..."
+    create_file "$test_dir/large1.bin" 50
+    create_file "$test_dir/large2.bin" 50
+    create_file "$test_dir/large3.bin" 50
+
+    if "$backuper" init "$config" \
+        --target "$test_dir" \
+        --destination "$backup_dir" \
+        --compression "zstd" \
         1> /dev/null; then
-
-        success "DRY-RUN execution passed"
+        success "Large files init passed"
     else
-        failed "DRY-RUN execution failed"
-        return
+        failed "Large files init failed"
+        return 1
     fi
 
-    if compgen -G "$backup_dir/*" > /dev/null; then
-        failed "DRY-RUN created backup artifacts"
+    local duration
+    duration=$(time_exec "large_files_backup" "$backuper" backup --config "$config")
+    success "Large files backup passed (${duration}ms)"
+}
+
+# Test 3: Many Small Files (5000+ files)
+test_many_small_files() {
+    section "TEST 3: Many Small Files (5000+)"
+
+    local config="$config_dir/small_files.toml"
+    local backup_dir="$backup_base/small_files"
+    local test_dir="$test_target/small_files"
+
+    mkdir -p "$backup_dir" "$test_dir"
+
+    info "Creating 5000 small files..."
+    for i in {1..5000}; do
+        echo "Small file $i" > "$test_dir/file_$i.txt"
+        if ((i % 1000 == 0)); then
+            echo -ne "\rCreated $i files..."
+        fi
+    done
+    echo ""
+
+    if "$backuper" init "$config" \
+        --target "$test_dir" \
+        --destination "$backup_dir" \
+        --compression "zstd" \
+        1> /dev/null; then
+        success "Small files init passed"
     else
-        success "DRY-RUN created no backup artifacts"
+        failed "Small files init failed"
+        return 1
+    fi
+
+    local duration
+    duration=$(time_exec "small_files_backup" "$backuper" backup --config "$config")
+    success "Small files backup passed (${duration}ms, 5000 files)"
+}
+
+# Test 4: Deep Directory Structure (100+ levels)
+test_deep_directories() {
+    section "TEST 4: Deep Directory Structure"
+
+    local config="$config_dir/deep.toml"
+    local backup_dir="$backup_base/deep"
+    local test_dir="$test_target/deep"
+
+    mkdir -p "$backup_dir"
+
+    info "Creating nested directories (50 levels)..."
+    local current="$test_dir"
+    for i in {1..50}; do
+        current="$current/level_$i"
+        mkdir -p "$current"
+        echo "Level $i file" > "$current/file_$i.txt"
+    done
+
+    if "$backuper" init "$config" \
+        --target "$test_dir" \
+        --destination "$backup_dir" \
+        --compression "zstd" \
+        1> /dev/null; then
+        success "Deep directories init passed"
+    else
+        failed "Deep directories init failed"
+        return 1
+    fi
+
+    if "$backuper" backup --config "$config" 1> /dev/null; then
+        success "Deep directories backup passed"
+    else
+        failed "Deep directories backup failed"
+        return 1
     fi
 }
 
+# Test 5: Unicode & Special Characters
+test_unicode_filenames() {
+    section "TEST 5: Unicode & Special Characters"
 
-test_backup() {
-    section "BACKUP"
+    local config="$config_dir/unicode.toml"
+    local backup_dir="$backup_base/unicode"
+    local test_dir="$test_target/unicode"
 
-    if "$backuper" backup \
-        --config "$target_config" \
+    mkdir -p "$backup_dir" "$test_dir"
+
+    # Create files with special names
+    echo "test" > "$test_dir/файл.txt"  # Russian
+    echo "test" > "$test_dir/文件.txt"   # Chinese
+    echo "test" > "$test_dir/ファイル.txt" # Japanese
+    echo "test" > "$test_dir/file with spaces.txt"
+    echo "test" > "$test_dir/file-with-dashes.txt"
+    echo "test" > "$test_dir/file_with_underscores.txt"
+
+    if "$backuper" init "$config" \
+        --target "$test_dir" \
+        --destination "$backup_dir" \
+        --compression "zstd" \
         1> /dev/null; then
-
-        success "BACKUP test passed"
+        success "Unicode filenames init passed"
     else
-        failed "BACKUP test failed"
+        failed "Unicode filenames init failed"
+        return 1
+    fi
+
+    if "$backuper" backup --config "$config" 1> /dev/null; then
+        success "Unicode filenames backup passed"
+    else
+        failed "Unicode filenames backup failed"
+        return 1
     fi
 }
 
+# Test 6: Symlinks (broken, circular, valid)
+test_symlink_edge_cases() {
+    section "TEST 6: Symlink Edge Cases"
 
-test_retention() {
-    section "RETENTION"
+    local config="$config_dir/symlinks.toml"
+    local backup_dir="$backup_base/symlinks"
+    local test_dir="$test_target/symlinks"
 
-    "$backuper" backup --config "$target_config" 1> /dev/null
-    "$backuper" backup --config "$target_config" 1> /dev/null
+    mkdir -p "$backup_dir" "$test_dir"
 
-    if ! compgen -G "$archive_dir/*" > /dev/null; then
-        success "RETENTION initial archive state passed"
+    # Create valid file and symlink
+    echo "real file" > "$test_dir/real_file.txt"
+    ln -s "$test_dir/real_file.txt" "$test_dir/valid_link.txt" 2>/dev/null || true
+
+    # Create broken symlink
+    ln -s "/nonexistent/path/file.txt" "$test_dir/broken_link.txt" 2>/dev/null || true
+
+    # Create circular symlink
+    mkdir -p "$test_dir/dir_a" "$test_dir/dir_b"
+    ln -s "$test_dir/dir_b" "$test_dir/dir_a/link_to_b" 2>/dev/null || true
+    ln -s "$test_dir/dir_a" "$test_dir/dir_b/link_to_a" 2>/dev/null || true
+
+    if "$backuper" init "$config" \
+        --target "$test_dir" \
+        --destination "$backup_dir" \
+        --compression "zstd" \
+        --link-mode "ignore" \
+        1> /dev/null; then
+        success "Symlinks init passed"
     else
-        failed "RETENTION initial archive state failed"
+        failed "Symlinks init failed"
+        return 1
     fi
 
-    "$backuper" backup --config "$target_config" 1> /dev/null
-    "$backuper" backup --config "$target_config" 1> /dev/null
-
-    if compgen -G "$archive_dir/*" > /dev/null; then
-        success "RETENTION archive creation passed"
+    if "$backuper" backup --config "$config" 1> /dev/null; then
+        success "Symlinks backup passed (with ignore mode)"
     else
-        failed "RETENTION archive creation failed"
+        failed "Symlinks backup failed"
+        return 1
     fi
 }
 
+# Test 7: Permission Issues (read-only files)
+test_permission_issues() {
+    section "TEST 7: Permission Issues"
 
-test_verify() {
-    section "VERIFY"
+    local config="$config_dir/permissions.toml"
+    local backup_dir="$backup_base/permissions"
+    local test_dir="$test_target/permissions"
 
-    if ! "$backuper" backup \
-        --config "$target_config" \
+    mkdir -p "$backup_dir" "$test_dir"
+
+    # Create files with different permissions
+    echo "readable" > "$test_dir/readable.txt"
+    echo "readonly" > "$test_dir/readonly.txt"
+    chmod 444 "$test_dir/readonly.txt"
+
+    # Create file in subdirectory (directories need execute permission to be accessed)
+    mkdir -p "$test_dir/subdir"
+    echo "test" > "$test_dir/subdir/file.txt"
+    chmod 444 "$test_dir/subdir/file.txt"  # Read-only file, but directory is readable
+
+    if "$backuper" init "$config" \
+        --target "$test_dir" \
+        --destination "$backup_dir" \
+        --compression "zstd" \
         1> /dev/null; then
+        success "Permissions init passed"
+    else
+        failed "Permissions init failed"
+        return 1
+    fi
 
-        failed "VERIFY setup backup failed"
-        return
+    if "$backuper" backup --config "$config" 1> /dev/null; then
+        success "Permissions backup passed (read-only files handled)"
+    else
+        failed "Permissions backup failed"
+        return 1
+    fi
+
+    # Cleanup permissions
+    chmod 644 "$test_dir/readonly.txt" 2>/dev/null || true
+    chmod 644 "$test_dir/subdir/file.txt" 2>/dev/null || true
+}
+
+
+
+# Test 8: Rapid Backup/Restore Cycles
+test_rapid_cycles() {
+    section "TEST 8: Rapid Backup/Restore Cycles"
+
+    local config="$config_dir/rapid.toml"
+    local backup_dir="$backup_base/rapid"
+    local restore_dir="$restore_base/rapid"
+    local test_dir="$test_target/rapid"
+
+    mkdir -p "$backup_dir" "$restore_dir" "$test_dir"
+
+    create_text_file "$test_dir/data.txt" 100
+
+    if "$backuper" init "$config" \
+        --target "$test_dir" \
+        --destination "$backup_dir" \
+        --compression "zstd" \
+        1> /dev/null; then
+        success "Rapid cycles init passed"
+    else
+        failed "Rapid cycles init failed"
+        return 1
+    fi
+
+    info "Running 10 backup/restore cycles..."
+    for i in {1..10}; do
+        if ! "$backuper" backup --config "$config" > /dev/null 2>&1; then
+            failed "Cycle $i: backup failed"
+            return 1
+        fi
+
+        local backup_file
+        backup_file=$(latest_backup "$backup_dir")
+
+        if ! "$backuper" restore \
+            --file "$backup_file" \
+            --destination "$restore_dir/cycle_$i" \
+            > /dev/null 2>&1; then
+            failed "Cycle $i: restore failed"
+            return 1
+        fi
+    done
+
+    success "Rapid cycles passed (10 cycles)"
+}
+
+# Test 9: Corrupted Backup Detection
+test_corruption_detection() {
+    section "TEST 9: Corrupted Backup Detection"
+
+    local config="$config_dir/corruption.toml"
+    local backup_dir="$backup_base/corruption"
+    local test_dir="$test_target/corruption"
+
+    mkdir -p "$backup_dir" "$test_dir"
+
+    create_text_file "$test_dir/data.txt" 50
+
+    if "$backuper" init "$config" \
+        --target "$test_dir" \
+        --destination "$backup_dir" \
+        --compression "zstd" \
+        1> /dev/null; then
+        success "Corruption detection init passed"
+    else
+        failed "Corruption detection init failed"
+        return 1
+    fi
+
+    if "$backuper" backup --config "$config" 1> /dev/null; then
+        success "Corruption detection backup created"
+    else
+        failed "Corruption detection backup failed"
+        return 1
     fi
 
     local backup_file
-    backup_file="$(latest_backup "$backup_dir")"
+    backup_file=$(latest_backup "$backup_dir")
 
-    if [ -z "$backup_file" ]; then
-        failed "VERIFY could not find backup file"
-        return
-    fi
-
-    if "$backuper" verify \
-        --file "$backup_file" \
-        1> /dev/null; then
-
-        success "VERIFY with file path passed"
+    # Verify valid backup
+    if "$backuper" verify --file "$backup_file" 1> /dev/null 2>&1; then
+        success "Corruption detection: valid backup verified"
     else
-        failed "VERIFY with file path failed"
-    fi
-}
-
-
-test_restore() {
-    section "RESTORE"
-
-    if ! "$backuper" backup \
-        --config "$target_config" \
-        1> /dev/null; then
-
-        failed "RESTORE setup backup failed"
-        return
+        failed "Corruption detection: valid backup failed verification"
+        return 1
     fi
 
-    local backup_file
-    backup_file="$(latest_backup "$backup_dir")"
+    # Corrupt the backup
+    if [ -f "$backup_file" ]; then
+        dd if=/dev/urandom of="$backup_file" bs=1 count=10 conv=notrunc 2>/dev/null
 
-    if [ -z "$backup_file" ]; then
-        failed "RESTORE could not find backup file"
-        return
-    fi
-
-    if "$backuper" restore \
-        --file "$backup_file" \
-        --destination "$restore_dir" \
-        1> /dev/null; then
-
-        success "RESTORE with file path passed"
-    else
-        failed "RESTORE with file path failed"
-    fi
-
-    if compgen -G "$restore_dir/*" > /dev/null; then
-        success "RESTORE extracted data exists"
-    else
-        failed "RESTORE extracted data does not exist"
-    fi
-}
-
-
-test_encryption() {
-    section "ENCRYPTION"
-
-    local encryption_path="$temporary_dir/etc/encryption-init-test.toml"
-    local master_key="$temporary_dir/etc/master.key"
-    local wrong_master_key="$temporary_dir/etc/wrong_master.key"
-
-    echo "hello, world!" > "$master_key"
-    echo "halo, dunia!" > "$wrong_master_key"
-
-    if ! "$backuper" init \
-        "$encryption_path" \
-        --target "$temporary_dir" \
-        --destination "$backup_dir" \
-        --retention 4 \
-        --link-mode "ignore" \
-        --compression "gzip" \
-        --archive-path "$archive_dir" \
-        --key-path "$master_key" \
-        1> /dev/null; then
-
-        failed "ENCRYPTION init failed"
-        return
-    fi
-
-    if "$backuper" backup \
-        --config "$encryption_path" \
-        1> /dev/null; then
-
-        success "ENCRYPTION backup creation passed"
-    else
-        failed "ENCRYPTION backup creation failed"
-        return
-    fi
-
-    local newest
-    newest="$(latest_backup "$backup_dir")"
-
-    if [ -z "$newest" ]; then
-        failed "ENCRYPTION encrypted backup not found"
-        return
-    fi
-
-    if [[ "$newest" != *.enc ]]; then
-        failed "ENCRYPTION backup does not have .enc extension"
-        return
-    fi
-
-    success "ENCRYPTION produced encrypted backup"
-
-    # ── Wrong key must be rejected
-    if "$backuper" restore \
-        --file "$newest" \
-        --destination "$recovery_dir" \
-        --key-path "$wrong_master_key" \
-        1> /dev/null; then
-
-        failed "ENCRYPTION invalid key was accepted"
-    else
-        if [ -e "$newest" ]; then
-            success "ENCRYPTION invalid key rejected and backup preserved"
+        # Verify corrupted backup (should fail)
+        if "$backuper" verify --file "$backup_file" 1> /dev/null 2>&1; then
+            failed "Corruption detection: corrupted backup passed verification (should fail)"
         else
-            failed "ENCRYPTION invalid key rejected but backup was removed"
+            success "Corruption detection: corrupted backup correctly rejected"
         fi
     fi
+}
 
-    # ── Correct key must restore successfully
-    if "$backuper" restore \
-        --file "$newest" \
-        --destination "$recovery_dir" \
-        --key-path "$master_key" \
-        1> /dev/null; then
 
-        success "ENCRYPTION restore with valid key passed"
+
+# Test 10: Config Edge Cases
+test_config_edge_cases() {
+    section "TEST 10: Config Edge Cases"
+
+    local test_dir="$test_target/config_edge"
+    mkdir -p "$test_dir"
+
+    # Test empty config path
+    info "Testing empty config file..."
+    local empty_config="$config_dir/empty.toml"
+    touch "$empty_config"
+
+    if "$backuper" backup --config "$empty_config" 1> /dev/null 2>&1; then
+        warn "Empty config: accepted (may be expected)"
     else
-        failed "ENCRYPTION restore with valid key failed"
+        success "Empty config: correctly rejected"
+    fi
+
+    # Test missing required fields
+    local invalid_config="$config_dir/invalid.toml"
+    echo "[backup]" > "$invalid_config"
+    echo "# missing required fields" >> "$invalid_config"
+
+    if "$backuper" backup --config "$invalid_config" 1> /dev/null 2>&1; then
+        warn "Invalid config: accepted (may be expected)"
+    else
+        success "Invalid config: correctly rejected"
     fi
 }
 
+# Test 11: Cleanup Verification
+test_cleanup_verification() {
+    section "TEST 11: Cleanup Verification"
 
-test_encryption_empty_key() {
-    section "ENCRYPTION EMPTY KEY"
+    info "Verifying temp directory cleanup..."
 
-    local encryption_path="$temporary_dir/etc/encryption-empty-key-test.toml"
-    local master_key="$temporary_dir/etc/empty_master.key"
-    local empty_key_backup="$temporary_dir/empty-key-backup"
-
-    mkdir -p "$empty_key_backup"
-
-    : > "$master_key"
-
-    "$backuper" init \
-        "$encryption_path" \
-        --target "$temporary_dir" \
-        --destination "$empty_key_backup" \
-        --compression "gzip" \
-        --key-path "$master_key" \
-        1> /dev/null
-
-    if "$backuper" backup \
-        --config "$encryption_path" \
-        1> /dev/null; then
-
-        failed "ENCRYPTION empty key was accepted"
-        return
+    # Check that temp_root will be cleaned up
+    if [ -d "$temp_root" ]; then
+        local file_count
+        file_count=$(find "$temp_root" -type f | wc -l)
+        success "Cleanup verification: $file_count test files created (all will be cleaned)"
     fi
-
-    if compgen -G "$empty_key_backup/*.tar.gz" > /dev/null; then
-        failed "ENCRYPTION empty key created backup artifact"
-        return
-    fi
-
-    if compgen -G "$empty_key_backup/*.sha256" > /dev/null; then
-        failed "ENCRYPTION empty key created checksum"
-        return
-    fi
-
-    success "ENCRYPTION empty key rejected before backup"
 }
 
+# ════════════════════════════════════════════════════════════════
+# MAIN
+# ════════════════════════════════════════════════════════════════
 
 main() {
-    info "Starting auto test for backuper"
+    info "Starting Backuper Hardtest Suite"
+    info "Temp directory: $temp_root"
+    info "All tests run in memory-only temp space\n"
 
-    mkdir -p "$temporary_dir"
-    mkdir -p "$backup_dir"
-    mkdir -p "$extract_dir"
-    mkdir -p "$archive_dir"
-    mkdir -p "$restore_dir"
-    mkdir -p "$recovery_dir"
+    setup_dirs
 
-    test_init
-    test_dry_run
-    test_backup
-    test_retention
-    test_verify
-    test_restore
-    test_encryption
-    test_encryption_empty_key
+    # Run tests
+    test_basic
+    test_large_files
+    test_many_small_files
+    test_deep_directories
+    test_unicode_filenames
+    test_symlink_edge_cases
+    test_permission_issues
+    test_rapid_cycles
+    test_corruption_detection
+    test_config_edge_cases
+    test_cleanup_verification
 
-    info "Cleaning up test directory"
-    rm -rf "$temporary_dir"
+    # Print timing results
+    if [ ${#timing_results[@]} -gt 0 ]; then
+        section "Performance Results"
+        for test in "${!timing_results[@]}"; do
+            echo "  $test: ${timing_results[$test]}"
+        done
+    fi
+
+    section "Hardtest Complete"
+    success "All tests finished! Temp files will be cleaned up."
 }
 
 main

@@ -1,7 +1,7 @@
 import argparse
 from importlib.metadata import version
 from pathlib import Path
-from backuper_app.utils import get_logger, format_size, get_file_by_path_or_date
+from backuper_app.utils import get_logger, format_size, get_file_by_path_or_date, TemporaryWorkspace
 from backuper_app.config import Config
 from backuper_app.dto import BackupPlan
 from backuper_app.backup import Retention, Archive, Backuper, Restore, verify_backup, Initializer, Encryption, is_encrypted_file, RemoteBackup
@@ -231,7 +231,7 @@ def _validate_archive(archive_path: Path|None, archive_enable: bool, keep_last: 
     if not keep_last and archive_enable:
         raise ConfigurationError(f"Archive is enabled but keep last is not set")
 
-def run_backup(dry_run: bool):
+def run_backup(dry_run: bool, workspace: TemporaryWorkspace):
     from backuper_app.utils.checksum import make_hash
 
     config = load_config(get_config())
@@ -270,7 +270,8 @@ def run_backup(dry_run: bool):
     )
 
     backuper = Backuper(
-        backup_plan
+        backup_plan,
+        workspace
     )
 
     # Init encryption here to validate key path before backuping
@@ -332,7 +333,10 @@ def run_backup(dry_run: bool):
             )
             backup_archive.do_archive()
 
-def run_restore(request):
+def run_restore(
+        request,
+        workspace
+):
     target = request.file_path or request.date
     logger.info(f"Verifying {target}")
     file_path = request.file_path
@@ -357,7 +361,7 @@ def run_restore(request):
 
             verify_backup(archive_file, key_path)
 
-            archive_file = encryption.decrypt_file(archive_file)
+            archive_file = encryption.decrypt_file(archive_file, workspace)
             logger.info(f"Backup decrypted to {archive_file}")
 
         # If normal backup
