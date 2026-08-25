@@ -4,10 +4,9 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from pathlib import Path
 from backuper_app.exception import EncryptionError, BackuperError
 from backuper_app.utils import TemporaryWorkspace
+from backuper_app.validation import validate_encrypted_file_not_malformed, validate_encryption_version
 
-MIN_ENCRYPTED_SIZE = 12 + 16
 CHUNK_SIZE = 8 * 1024 * 1024
-VERSION_LIST = (1, )
 
 class Encryption:
     def __init__(self, key_path: Path):
@@ -37,7 +36,6 @@ class Encryption:
 
     @staticmethod
     def _encrypt(aesgcm, file_in, file_out):
-
         file_out.write(struct.pack("B", 1))
 
         while chunk := file_in.read(CHUNK_SIZE):
@@ -55,8 +53,7 @@ class Encryption:
         # Version verification
         version_bytes = file_in.read(1)
         version = struct.unpack("B", version_bytes)[0]
-        if version not in VERSION_LIST:
-            raise EncryptionError("Unsupported encryption version")
+        validate_encryption_version(version)
 
         while True:
             # Get chunk size
@@ -96,8 +93,8 @@ class Encryption:
         aesgcm = AESGCM(self.__master_key)
 
         # Validate encrypted backup structure
-        if enc_file_path.stat().st_size < MIN_ENCRYPTED_SIZE:
-            raise EncryptionError("Malformed encryption backup")
+        validate_encrypted_file_not_malformed(enc_file_path)
+
         with (
             enc_file_path.open('rb') as file_in,
             decrypted_file.open('wb') as file_out

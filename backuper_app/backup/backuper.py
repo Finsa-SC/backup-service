@@ -7,6 +7,7 @@ from backuper_app.backup.analyzer import Analyzer
 from .filter_engine import FilterEngine
 from .compression import resolve_compression_from_config
 from .manifest import create_manifest_data
+from ..validation import validate_path
 
 logger = get_logger(__name__)
 
@@ -90,15 +91,8 @@ class Backuper:
         else:
             return backup_path
 
-    def _validate_backup_path(self):
-        if not self.target_path.exists():
-            raise BackuperError(f"Target path not found for {self.target_path}")
-
-        if not self.destination_path.exists():
-            raise BackuperError(f"Destination path not found for {self.destination_path}")
-
     def do_backup(self) -> Path:
-        self._validate_backup_path()
+        validate_path(self.target_path, self.destination_path)
 
         filter_engine = FilterEngine(
             target_path=self.target_path,

@@ -1,11 +1,14 @@
 import argparse
 from importlib.metadata import version
 from pathlib import Path
+
 from backuper_app.utils import get_logger, format_size, get_file_by_path_or_date, TemporaryWorkspace
 from backuper_app.config import Config
 from backuper_app.dto import BackupPlan
 from backuper_app.backup import Retention, Archive, Backuper, Restore, verify_backup, Initializer, Encryption, is_encrypted_file, RemoteBackup
-from backuper_app.exception import InvalidArgumetError, ConfigurationError, BackuperError
+from backuper_app.exception import InvalidArgumetError, BackuperError
+from backuper_app.validation import is_valid_input_archive, validate_archive
+from backuper_app.validation.encryption import validate_master_key
 
 logger = get_logger(__name__)
 VERSION = version("file-backuper")
@@ -213,30 +216,12 @@ def load_config(argsv):
     backup_config = Config(config_path)
     return backup_config.set_config()
 
-
-def _valid_input_archive(file: Path | None, date: str | None, archive_path: Path | None):
-    if file and date:
-        raise InvalidArgumetError("Unexpected argument, choose one format(file/date)")
-
-    if date and not archive_path:
-        raise InvalidArgumetError("Missing --archive-path flag to use --date")
-
-    return True
-
-def _validate_archive(archive_path: Path|None, archive_enable: bool, keep_last: int|None):
-    if keep_last and not archive_enable:
-        raise ConfigurationError(f"Keep last active but archive is {archive_enable}")
-    if archive_enable and not archive_path:
-        raise ConfigurationError(f"Archive is enabled but archive path is not set")
-    if not keep_last and archive_enable:
-        raise ConfigurationError(f"Archive is enabled but keep last is not set")
-
 def run_backup(dry_run: bool, workspace: TemporaryWorkspace):
     from backuper_app.utils.checksum import make_hash
 
     config = load_config(get_config())
 
-    _validate_archive(config.archive_path, config.archive_enabled, keep_last=config.keep_last)
+    validate_archive(config.archive_path, config.archive_enabled, keep_last=config.keep_last)
 
     if not dry_run:
         logger.info(f"Starting backup service for {config.backup_name}")
@@ -345,7 +330,7 @@ def run_restore(
     archive_path = request.archive_path
     key_path = request.key_path
 
-    if _valid_input_archive(file_path, date, archive_path=archive_path):
+    if is_valid_input_archive(file_path, date, archive_path=archive_path):
         # Resolve file from path or date
         archive_file = get_file_by_path_or_date(file_path, date=date, archive_path=archive_path)
 
@@ -355,8 +340,8 @@ def run_restore(
 
         # If encrypted backup
         elif is_encrypted_file(archive_file):
-            if not Path(key_path).exists():
-                raise BackuperError("Master key path is invalid")
+            validate_master_key(key_path)
+
             encryption = Encryption(key_path)
 
             verify_backup(archive_file, key_path)
@@ -385,7 +370,7 @@ def run_restore(
         archive_file.unlink(missing_ok=True)
 
 def run_verify(request):
-    if _valid_input_archive(file=request.file_path, date=request.date, archive_path=request.archive_path):
+    if is_valid_input_archive(file=request.file_path, date=request.date, archive_path=request.archive_path):
         file_path = get_file_by_path_or_date(request.file_path, request.archive_path, request.date)
         is_valid = verify_backup(
             file_path=file_path,

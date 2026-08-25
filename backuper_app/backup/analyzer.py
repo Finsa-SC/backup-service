@@ -1,5 +1,5 @@
 from pathlib import Path
-from backuper_app.utils import get_logger, format_size
+from backuper_app.utils import get_logger
 
 logger = get_logger(__name__)
 
