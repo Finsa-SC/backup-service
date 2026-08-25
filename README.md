@@ -1,159 +1,228 @@
 # File Backuper
 
-[![Release](https://img.shields.io/badge/release-v1.2.0-blue)](https://github.com/Finsa-SC/backup-service/releases/tag/v1.2.0)
+[![Release](https://img.shields.io/badge/release-v3.0.2-blue)](https://github.com/Finsa-SC/File_Backuper/releases)
 [![Python](https://img.shields.io/badge/python-3.14%2B-blue)](https://www.python.org/)
+[![PyPI](https://img.shields.io/badge/pypi-file--backuper-blue)](https://pypi.org/project/file-backuper/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-A powerful, modular CLI backup utility for creating, restoring, and verifying file backups with advanced features like compression, retention policies, and data integrity verification.
+A powerful, modular CLI backup utility for creating, restoring, and verifying file backups with advanced features like compression, encryption, retention policies, remote backups, and data integrity verification.
 
-> **Latest Release:** v1.2.0 — Now supports setting default file config during initialization!
+> **Current Version:** v3.0.2 — Production-ready backup automation with encryption and remote storage support
 
-## Features
+## 🎯 Key Features
 
-- **Flexible Backup Creation** - Backup files and directories with include/exclude filtering
-- **Multiple Compression Methods** - Support for gzip and zstd compression algorithms
-- **Retention Policies** - Automatically manage backup rotation and keep only the last N backups
-- **Data Integrity** - Built-in checksum verification for backup validation
-- **Restore Capabilities** - Extract backups by file path or date with integrity checking
-- **Symbolic Link Handling** - Choose how to handle symlinks (ignore, follow, or preserve)
-- **Archive Support** - Automatically archive expired backups to a separate location
-- **Dry-Run Mode** - Preview backup operations before execution
-- **Configuration-Based** - TOML-based configuration for easy management
-- **Detailed Logging** - Comprehensive logging for monitoring and troubleshooting
+- **Flexible Backup Creation** — Backup files and directories with include/exclude filtering
+- **Multiple Compression Methods** — Support for gzip and zstd compression algorithms
+- **Data Encryption** — Optional AES-GCM encryption with master key
+- **Remote Backup** — Automated sync to remote servers via SSH with paramiko
+- **Retention Policies** — Automatic backup rotation; keep only the last N backups
+- **Data Integrity Verification** — Built-in checksum verification and integrity checking
+- **Restore Capabilities** — Extract backups by file path or date with validation
+- **Symbolic Link Handling** — Choose how to handle symlinks (ignore, follow, or preserve)
+- **Archive Support** — Automatically archive expired backups instead of deletion
+- **Dry-Run Mode** — Preview backup operations before execution
+- **TOML Configuration** — Simple TOML-based configuration for easy management
+- **Streaming Processing** — Memory-efficient streaming for large files
+- **Systemd Integration** — Ready for scheduled backups via systemd timers
+- **Comprehensive Logging** — Detailed logging via stdout → journalctl
 
-## What's New in v1.2.0
+## 📋 Table of Contents
 
-- ✨ **Default File Config in Init** - Set default configuration file during initialization
-- 🔧 Improved configuration workflow
-- 📋 [Full Changelog](https://github.com/Finsa-SC/backup-service/releases/tag/v1.2.0)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Configuration](#configuration)
+- [Command Reference](#command-reference)
+- [Encryption Setup](#encryption-setup)
+- [Remote Backup Setup](#remote-backup-setup)
+- [Systemd Automation](#systemd-automation)
+- [Troubleshooting](#troubleshooting)
+- [Architecture](#architecture)
 
-## Installation
+## 📦 Installation
 
 ### Requirements
-- Python >= 3.14
-- pip or uv
 
-### From GitHub Releases
+- **Python:** >= 3.14
+- **pip** or **uv** (for installation)
+- **SSH client** (if using remote backup feature)
 
-Download and install the latest release:
+### From PyPI (Recommended)
 
 ```bash
-# Extract the release
-unzip file-backuper-1.2.0.tar.gz
-cd backup-service
-
-# Install
-pip install .
+pip install file-backuper
 ```
 
 ### From Source
 
 ```bash
-git clone https://github.com/Finsa-SC/backup-service.git
-cd backup-service
+git clone https://github.com/Finsa-SC/File_Backuper.git
+cd File_Backuper
 pip install -e .
 ```
 
-### Using uv (recommended)
+### Using uv
+
 ```bash
-uv pip install -e .
+uv pip install file-backuper
 ```
 
-This creates the `backuper` command available in your PATH.
+After installation, the `backuper` command will be available in your PATH.
 
-## Quick Start
-
-### 1. Initialize Configuration
+### Verify Installation
 
 ```bash
-backuper init --target /path/to/backup --destination /path/to/backups
+backuper --version
+# Output: backuper 3.0.2
 ```
 
-Or with all options:
+## 🚀 Quick Start
+
+### 1. Create a Configuration File
+
+Create a basic TOML configuration:
+
 ```bash
-backuper init /etc/backuper/config.toml \
+backuper init my_backup.toml \
   --target /home/user/documents \
   --destination /mnt/backups \
-  --retention 5 \
-  --compression zstd \
-  --link-mode preserve
+  --retention 7 \
+  --compression zstd
 ```
 
-### 2. Create a Backup
+Or manually create `config.toml`:
 
-```bash
-backuper backup --config /etc/backuper/config.toml
+```toml
+[backup]
+target = "/home/user/documents"
+destination = "/mnt/backups"
+compression = "zstd"
+link_mode = "ignore"
+
+[retention]
+keep_last = 7
 ```
 
-Preview before executing:
+### 2. Preview Your Backup
+
+Always preview before executing:
+
 ```bash
-backuper backup --config /etc/backuper/config.toml --dry-run
+backuper backup --config config.toml --dry-run
 ```
 
-### 3. Restore from Backup
+### 3. Create a Backup
 
-Restore a specific file:
 ```bash
-backuper restore --file /path/to/backup/file.tar.gz --destination /tmp/restore
-```
-
-Restore a backup by date:
-```bash
-backuper restore --date "2024-01-15" --archive-path /mnt/backups --destination /tmp/restore
+backuper backup --config config.toml
 ```
 
 ### 4. Verify Backup Integrity
 
-Verify a specific backup file:
 ```bash
-backuper verify --file /path/to/backup/file.tar.gz
+backuper verify --file /mnt/backups/backup_2024-01-15_120000.tar.gz
 ```
 
-Verify a backup by date:
+### 5. Restore When Needed
+
 ```bash
-backuper verify --date "2024-01-15" --archive-path /mnt/backups
+backuper restore --file /mnt/backups/backup_2024-01-15_120000.tar.gz \
+  --destination /tmp/restore
 ```
 
-## Configuration
+## ⚙️ Configuration
 
-Configuration is managed through a TOML file (default: `config.toml`).
+Configuration is managed through a **TOML file**. Below is a comprehensive example:
 
-### Example Configuration
+### Complete Configuration Example
 
 ```toml
+# Backup source and destination settings
 [backup]
-backup_name = "my_backup"
-target = "/home/user/documents"
-destination = "/mnt/backups"
-compression = "zstd"  # or "gzip"
-keep_last = 5
-link_mode = "preserve"  # options: ignore, follow, preserve
-archive_enable = true
-archive_path = "/mnt/backups/archive"
+target = "/home/silence-suzuka/Project/playground"
+destination = "/home/silence-suzuka/backup_test"
+compression = "zstd"              # or "gzip"
+link_mode = "ignore"              # or "follow", "preserve"
 
+# File filtering (optional)
 [filter]
-include = ["*.txt", "*.pdf"]
-exclude = ["*.tmp", "*.cache"]
+include = [
+    "*.txt",
+    "*.pdf",
+    "Documents/**",
+]
+exclude = [
+    ".venv",
+    "dist/",
+    "**/__pycache__/",
+    "**/*.pyc",
+]
+
+# Retention policy
+[retention]
+keep_last = 7                     # Keep last 7 backups
+
+# Archive expired backups (optional)
+[archive]
+enabled = true
+path = "/mnt/backup_archive"
+
+# Encryption (optional)
+[encryption]
+enabled = false
+key_path = "/etc/backuper/master.key"
+
+# Remote backup via SSH (optional)
+[remote]
+host = "192.168.56.101"
+user = "backup_user"
+port = 22
+identity_file = "~/.ssh/id_ed25519"
+remote_path = "/server/backup/destination"
+# Or use SSH config alias instead:
+# alias = "production_server"
 ```
 
-### Configuration Options
+### Configuration Options Reference
 
-| Option | Type | Description |
-|--------|------|-------------|
-| `backup_name` | string | Name identifier for this backup job |
-| `target` | path | Source directory/file to backup |
-| `destination_path` | path | Directory where backups are stored |
-| `compression` | string | Compression method: `gzip` or `zstd` |
-| `keep_last` | integer | Number of backups to retain (0 = keep all) |
-| `link_mode` | string | Symlink handling: `ignore`, `follow`, or `preserve` |
-| `archive_enabled` | boolean | Archive expired backups instead of deleting |
-| `archive_path` | path | Directory for archived backups (if enabled) |
-| `include` | array | File patterns to include (optional) |
-| `exclude` | array | File patterns to exclude (optional) |
+| Section | Option | Type | Required | Description |
+|---------|--------|------|----------|-------------|
+| **backup** | `target` | path | ✅ | Source directory/file to backup |
+| | `destination` | path | ✅ | Local directory where backups are stored |
+| | `compression` | string | ✅ | Compression: `gzip` or `zstd` |
+| | `link_mode` | string | ❌ | Symlink handling: `ignore`, `follow`, `preserve` (default: `ignore`) |
+| **filter** | `include` | array | ❌ | Glob patterns to include (if set, only these are backed up) |
+| | `exclude` | array | ❌ | Glob patterns to exclude from backup |
+| **retention** | `keep_last` | integer | ❌ | Number of backups to retain (0 = keep all, default: 0) |
+| **archive** | `enabled` | boolean | ❌ | Archive expired backups instead of deleting (default: false) |
+| | `path` | path | ❌ | Directory for archived backups |
+| **encryption** | `enabled` | boolean | ❌ | Enable backup encryption (default: false) |
+| | `key_path` | path | ❌ | Path to master encryption key file |
+| **remote** | `host` | string | ❌ | Remote SSH host address |
+| | `user` | string | ❌ | SSH username |
+| | `port` | integer | ❌ | SSH port (default: 22) |
+| | `identity_file` | path | ❌ | SSH private key path |
+| | `remote_path` | path | ❌ | Destination path on remote server |
+| | `alias` | string | ❌ | SSH config alias (alternative to host/user/port) |
 
-## Command Reference
+### Compression Comparison
 
-### backup
+| Method | Ratio | Speed | Notes |
+|--------|-------|-------|-------|
+| **gzip** | Lower | Faster | Better for fast backups, wide compatibility |
+| **zstd** | Higher | Moderate | Modern, better compression, recommended |
+
+**Recommendation:** Use `zstd` for better storage efficiency unless you need maximum speed.
+
+### Link Mode Behavior
+
+- **`ignore`** (default): Skip symbolic links entirely
+- **`follow`**: Dereference and backup link targets
+- **`preserve`**: Keep symlinks as-is in backup
+
+## 📖 Command Reference
+
+### `backuper backup`
+
 Create a new backup with retention and archival support.
 
 ```bash
@@ -162,13 +231,27 @@ backuper backup --config CONFIG_PATH [--dry-run]
 
 **Options:**
 - `--config CONFIG_PATH` (required): Path to configuration file
-- `--dry-run`: Preview without actually creating backup
+- `--dry-run`: Preview without creating backup
 
-### restore
-Extract backup data by file path or date with integrity verification.
+**Example:**
 
 ```bash
-backuper restore [--file FILE_PATH | --date DATE] --destination DEST_PATH [--archive-path ARCHIVE_PATH]
+# Preview backup
+backuper backup --config /etc/backuper/config.toml --dry-run
+
+# Create actual backup
+backuper backup --config /etc/backuper/config.toml
+```
+
+### `backuper restore`
+
+Extract backup data by file path or date.
+
+```bash
+backuper restore [--file FILE_PATH | --date DATE] \
+  --destination DEST_PATH \
+  [--archive-path ARCHIVE_PATH] \
+  [--key-path KEY_PATH]
 ```
 
 **Options:**
@@ -176,24 +259,75 @@ backuper restore [--file FILE_PATH | --date DATE] --destination DEST_PATH [--arc
 - `--date DATE`: Date of backup to restore (requires `--archive-path`)
 - `--destination DEST_PATH`: Where to extract files (default: `/tmp/backup_restore`)
 - `--archive-path ARCHIVE_PATH`: Path to archive directory (required when using `--date`)
+- `--key-path KEY_PATH`: Master key for decryption (if backup is encrypted)
 
-### verify
-Verify backup integrity using stored checksums.
+**Examples:**
 
 ```bash
-backuper verify [--file FILE_PATH | --date DATE] [--archive-path ARCHIVE_PATH]
+# Restore from specific backup file
+backuper restore --file /mnt/backups/backup_2024-01-15_120000.tar.gz \
+  --destination /tmp/restore
+
+# Restore from archived backup by date
+backuper restore --date "2024-01-15" \
+  --archive-path /mnt/backup_archive \
+  --destination /tmp/restore
+
+# Restore encrypted backup
+backuper restore --file /mnt/backups/backup_2024-01-15_120000.tar.gz.enc \
+  --destination /tmp/restore \
+  --key-path /etc/backuper/master.key
+```
+
+### `backuper verify`
+
+Verify backup integrity using checksums.
+
+```bash
+backuper verify [--file FILE_PATH | --date DATE] \
+  [--archive-path ARCHIVE_PATH] \
+  [--key-path KEY_PATH]
 ```
 
 **Options:**
-- `--file FILE_PATH`: Path to backup file to verify
+- `--file FILE_PATH`: Backup file to verify
 - `--date DATE`: Date of backup to verify (requires `--archive-path`)
 - `--archive-path ARCHIVE_PATH`: Path to archive directory
+- `--key-path KEY_PATH`: Master key (if backup is encrypted)
 
-### init
+**Examples:**
+
+```bash
+# Verify a backup file
+backuper verify --file /mnt/backups/backup_2024-01-15_120000.tar.gz
+
+# Verify archived backup by date
+backuper verify --date "2024-01-15" \
+  --archive-path /mnt/backup_archive
+
+# Verify encrypted backup
+backuper verify --file /mnt/backups/backup_2024-01-15_120000.tar.gz.enc \
+  --key-path /etc/backuper/master.key
+```
+
+### `backuper init`
+
 Create an initial configuration file from template.
 
 ```bash
-backuper init [CONFIG_PATH] [--target TARGET] [--destination DEST] [--retention N] [--compression METHOD] [--link-mode MODE]
+backuper init [CONFIG_PATH] \
+  [--target TARGET] \
+  [--destination DEST] \
+  [--retention N] \
+  [--compression METHOD] \
+  [--link-mode MODE] \
+  [--archive-path ARCHIVE_PATH] \
+  [--key-path KEY_PATH] \
+  [--remote-host HOST] \
+  [--remote-user USER] \
+  [--remote-port PORT] \
+  [--remote-identity-file FILE] \
+  [--remote-path PATH]
 ```
 
 **Options:**
@@ -201,197 +335,602 @@ backuper init [CONFIG_PATH] [--target TARGET] [--destination DEST] [--retention 
 - `--target`: Source directory to backup
 - `--destination`: Backup destination directory
 - `--retention`: Number of backups to keep
-- `--compression`: Compression method (`gzip` or `zstd`)
-- `--link-mode`: Symlink handling mode
+- `--compression`: `gzip` or `zstd`
+- `--link-mode`: `ignore`, `follow`, or `preserve`
+- Remote options: Configure SSH access in one command
 
-## Architecture
-
-```
-backuper_app/
-├── backup/              # Core backup functionality
-│   ├── backuper.py     # Main backup engine
-│   ├── compression.py  # Compression handling
-│   ├── retention.py    # Backup rotation & cleanup
-│   ├── archive.py      # Archive management
-│   ├── restore.py      # Restore operations
-│   ├── verify.py       # Integrity verification
-│   ├── analyzer.py     # File analysis & filtering
-│   ├── filter_engine.py # Include/exclude filtering
-│   ├── manifest.py     # Backup metadata
-│   └── initializer.py  # Config initialization
-├── config/             # Configuration handling
-│   └── config.py       # Config parsing & validation
-├── utils/              # Utility functions
-│   ├── checksum.py     # Hash & verification
-│   ├── logger.py       # Logging setup
-│   ├── capacity.py     # Size calculations
-│   └── archive_resolver.py  # Archive path resolution
-└── main.py             # CLI entry point
-```
-
-## Workflow
-
-### Backup Workflow
-1. Load configuration from TOML file
-2. Analyze source directory with filtering
-3. Create compressed archive (gzip or zstd)
-4. Generate checksum for integrity verification
-5. Check retention policy
-6. Archive or delete old backups based on retention settings
-
-### Restore Workflow
-1. Validate backup file checksum
-2. Extract archive to destination
-3. Restore file permissions and metadata
-
-### Verification Workflow
-1. Calculate checksum of backup file
-2. Compare with stored checksum
-3. Report integrity status
-
-## Examples
-
-### Backup with retention
+**Example:**
 
 ```bash
-# Create initial config
-backuper init my_backup.toml \
+backuper init /etc/backuper/config.toml \
   --target /home/user/documents \
   --destination /mnt/backups \
   --retention 7 \
-  --compression zstd
-
-# Create backup (keeps last 7 backups)
-backuper backup --config my_backup.toml
+  --compression zstd \
+  --remote-host backup.example.com \
+  --remote-user backup \
+  --remote-path /backups/server-name
 ```
 
-### Backup with filtering
+## 🔐 Encryption Setup
+
+Encryption uses **AES-GCM** with a master key for data security.
+
+### Create a Master Key
+
+The master key can be any file content (text, hex, binary). It will be hashed to 32 bytes using SHA256:
+
+```bash
+# Generate a random master key
+openssl rand -hex 32 > /etc/backuper/master.key
+
+# Or use any text/data as key
+echo "my-secret-passphrase" > /etc/backuper/master.key
+
+# Secure the key file
+chmod 600 /etc/backuper/master.key
+sudo chown backup:backup /etc/backuper/master.key
+```
+
+### Enable Encryption in Config
 
 ```toml
-[backup]
-backup_name = "selective_backup"
-target = "/home/user"
-destination = "/mnt/backups"
-compression = "zstd"
-
-[filter]
-include = ["*.txt", "*.pdf", "Documents/**"]
-exclude = ["*.tmp", ".git/**", "node_modules/**"]
+[encryption]
+enabled = true
+key_path = "/etc/backuper/master.key"
 ```
 
-### Scheduled backups with systemd
+### How Encryption Works
+
+1. **Backup Process**: Archives are encrypted with AES-GCM before storage
+   - Encrypted file extension: `.tar.gz.enc` or `.tar.zst.enc`
+   - Each chunk uses a random 12-byte nonce
+   - Streaming encryption for memory efficiency
+
+2. **Restore Process**: Requires the same master key
+   - Provide `--key-path` to restore command
+   - Without correct key: `EncryptionError: Unable to decrypt backup`
+
+### Encryption Examples
+
+```bash
+# Create encrypted backup
+backuper backup --config config.toml
+
+# Verify encrypted backup
+backuper verify --file /mnt/backups/backup_2024-01-15_120000.tar.gz.enc \
+  --key-path /etc/backuper/master.key
+
+# Restore from encrypted backup
+backuper restore --file /mnt/backups/backup_2024-01-15_120000.tar.gz.enc \
+  --key-path /etc/backuper/master.key \
+  --destination /tmp/restore
+```
+
+### Encryption Security Notes
+
+- **Key Management**: Store master key securely, consider using a secure vault for production
+- **Key Loss**: If master key is lost, encrypted backups cannot be recovered
+- **Performance**: Encryption adds ~5-10% overhead; acceptable for most use cases
+- **Algorithm**: AES-256-GCM is industry standard and secure
+
+## 🌐 Remote Backup Setup
+
+Remote backups automatically sync backup archives to a remote server via SSH.
+
+### Workflow
+
+1. Create backup in **local destination** (primary storage)
+2. Verify backup success locally
+3. **Then** sync to remote server if local backup succeeds
+4. This ensures local backup is always safe even if remote sync fails
+
+### Configuration Options
+
+#### Method 1: Explicit SSH Details
+
+```toml
+[remote]
+host = "backup.example.com"
+user = "backup"
+port = 22
+identity_file = "~/.ssh/id_ed25519"
+remote_path = "/backups/server-name"
+```
+
+#### Method 2: SSH Config Alias (Recommended)
+
+Use existing SSH config entry:
+
+```toml
+[remote]
+alias = "production_backup"
+remote_path = "/backups/server-name"
+```
+
+In `~/.ssh/config`:
+
+```
+Host production_backup
+    HostName backup.example.com
+    User backup
+    IdentityFile ~/.ssh/id_ed25519
+    Port 22
+```
+
+### Setup Steps
+
+#### 1. Create SSH Key Pair
+
+```bash
+# On backup machine
+ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_backup
+
+# Copy to remote (one-time)
+ssh-copy-id -i ~/.ssh/id_ed25519_backup backup@backup.example.com
+```
+
+#### 2. Test SSH Connection
+
+```bash
+ssh -i ~/.ssh/id_ed25519_backup backup@backup.example.com "mkdir -p /backups/server-name"
+```
+
+#### 3. Configure in TOML
+
+```toml
+[remote]
+host = "backup.example.com"
+user = "backup"
+identity_file = "~/.ssh/id_ed25519_backup"
+remote_path = "/backups/server-name"
+```
+
+#### 4. Test Backup
+
+```bash
+backuper backup --config config.toml --dry-run
+backuper backup --config config.toml
+```
+
+### Remote Backup Examples
+
+```bash
+# View remote sync in action
+backuper backup --config config.toml
+
+# Restore from remote if local is gone
+# (Manually download from remote, then restore)
+ssh backup@backup.example.com "ls -la /backups/server-name/"
+scp backup@backup.example.com:/backups/server-name/backup*.tar.gz ./
+backuper restore --file backup_2024-01-15_120000.tar.gz --destination /tmp/restore
+```
+
+### Remote Backup Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| **Permission denied** | Verify SSH key, check remote path permissions |
+| **Connection timeout** | Check firewall, SSH service running on remote |
+| **Remote path doesn't exist** | Create directory: `ssh user@host "mkdir -p /path"` |
+| **Backup succeeds but no remote sync** | Check error logs, network connectivity |
+
+## 🔄 Systemd Automation
+
+Schedule backups automatically using systemd timers.
+
+### User Setup
+
+Create a dedicated `backup` user:
+
+```bash
+sudo useradd --system --home /var/lib/backup --shell /usr/sbin/nologin backup
+sudo mkdir -p /var/lib/backup
+sudo chown backup:backup /var/lib/backup
+```
+
+### Configuration Files
+
+Create `/etc/systemd/system/backuper.service`:
 
 ```ini
-# /etc/systemd/system/backuper.service
 [Unit]
-Description=File Backuper Service
+Description=File Backuper Backup Service
 After=network.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/bin/backuper backup --config /etc/backuper/config.toml
 User=backup
+ExecStart=/usr/local/bin/backuper backup --config /etc/backuper/config.toml
 StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=backuper
 
-# /etc/systemd/system/backuper.timer
+# Resource limits
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+```
+
+Create `/etc/systemd/system/backuper.timer`:
+
+```ini
 [Unit]
 Description=Daily Backup Timer
 Requires=backuper.service
 
 [Timer]
 OnCalendar=daily
-OnCalendar=00:02
+OnCalendar=02:00
 Persistent=true
+AccuracySec=1m
 
 [Install]
 WantedBy=timers.target
 ```
 
-## Error Handling
+### Enable and Start
 
-The tool provides clear error messages for common issues:
-
-- **Invalid config**: Check TOML syntax and required fields
-- **Permission denied**: Verify read/write permissions on source and destination
-- **Checksum mismatch**: Backup may be corrupted, re-create backup
-- **Insufficient space**: Ensure destination has enough free space
-
-## Performance Notes
-
-- **Compression**: zstd typically offers better compression ratios than gzip
-- **Retention**: Archiving is preferred over deletion for safety
-- **Symbolic links**: Use `preserve` mode to maintain symlink structure
-- **Large files**: Dry-run mode helps preview operations before execution
-
-## Development
-
-### Project Structure
-- Modular design with clear separation of concerns
-- Type hints for better IDE support
-- Comprehensive logging throughout
-- Exception handling with custom `BackuperError`
-
-### Running Tests
 ```bash
-python -m pytest test/
+# Reload systemd
+sudo systemctl daemon-reload
+
+# Enable timer to start on boot
+sudo systemctl enable backuper.timer
+
+# Start timer immediately
+sudo systemctl start backuper.timer
+
+# Check status
+sudo systemctl status backuper.timer
+systemctl list-timers backuper.timer
+
+# View logs
+sudo journalctl -u backuper.service -n 50 -f
 ```
 
-## License
+### Timer Patterns
 
-[Add your license here]
+| Pattern | Meaning |
+|---------|---------|
+| `OnCalendar=daily` | Every day at midnight |
+| `OnCalendar=02:00` | Every day at 2:00 AM |
+| `OnCalendar=Mon *-*-* 03:00:00` | Every Monday at 3:00 AM |
+| `OnCalendar=*-*-1 04:00:00` | First day of month at 4:00 AM |
+| `OnCalendar=*-*-* 00,06,12,18:00:00` | Every 6 hours |
 
-## Contributing
+### View Backup Logs
 
-Contributions are welcome! Please ensure:
-- Code follows the existing style
-- New features include tests
-- Documentation is updated
-- Commit messages are descriptive
+```bash
+# Last 50 lines
+sudo journalctl -u backuper.service -n 50
 
-## Support & Resources
+# Follow in real-time
+sudo journalctl -u backuper.service -f
 
-- 📖 [Documentation](https://github.com/Finsa-SC/backup-service)
-- 🐛 [Issue Tracker](https://github.com/Finsa-SC/backup-service/issues)
-- 📝 [Releases](https://github.com/Finsa-SC/backup-service/releases)
-- 💬 For questions, open an issue on GitHub
+# Filter by date
+sudo journalctl -u backuper.service --since "2024-01-15"
 
-## Troubleshooting
+# Only errors
+sudo journalctl -u backuper.service -p err
+```
 
-**Backup stuck or slow?**
-- Use `--dry-run` to check what's being processed
-- Check exclude patterns if too many files
-- Monitor disk I/O with `iostat`
+### Example System Setup
 
-**Restore fails?**
-- Verify backup file exists and is accessible
-- Check checksum: `backuper verify --file <backup>`
-- Ensure destination has write permissions
+Complete production setup:
 
-**Config errors?**
-- Validate TOML syntax at https://www.toml-lint.com/
-- Ensure all paths are absolute and exist
-- Check file permissions for config file
+```bash
+# 1. Create backup user
+sudo useradd --system backup
 
-## Release History
+# 2. Create config
+sudo tee /etc/backuper/config.toml > /dev/null <<EOF
+[backup]
+target = "/home/user/documents"
+destination = "/mnt/backups"
+compression = "zstd"
 
-### v1.2.0 (Current)
-**Released:** Recently
-- ✨ Feature to set default file config in init
-- 🔧 Enhanced configuration initialization workflow
-- 📚 Improved documentation
+[retention]
+keep_last = 30
 
-[View Release](https://github.com/Finsa-SC/backup-service/releases/tag/v1.2.0)
+[encryption]
+enabled = true
+key_path = "/etc/backuper/master.key"
 
-### v1.0.1
-- Previous stable release
+[remote]
+alias = "backup_server"
+remote_path = "/backups/prod-server"
+EOF
 
-### v1.0.0
-- Initial release
+# 3. Set permissions
+sudo chmod 600 /etc/backuper/config.toml
+sudo chown backup:backup /etc/backuper/config.toml
+sudo chown backup:backup /etc/backuper/master.key
+
+# 4. Enable timer
+sudo systemctl daemon-reload
+sudo systemctl enable backuper.timer
+sudo systemctl start backuper.timer
+```
+
+## 🐛 Troubleshooting
+
+### Backup Issues
+
+#### Backup is slow or stuck
+
+```bash
+# Preview what will be backed up (dry-run)
+backuper backup --config config.toml --dry-run
+
+# Check disk I/O
+iostat -x 1 10
+
+# Review exclude patterns - too many files being processed?
+# Increase exclude patterns if needed
+```
+
+#### Permission denied errors
+
+```bash
+# Backup user must read source and write to destination
+sudo chown -R backup:backup /mnt/backups
+sudo chmod 755 /mnt/backups
+
+# Or run with appropriate user
+sudo -u backup backuper backup --config config.toml
+```
+
+#### Out of disk space
+
+```bash
+# Check available space
+df -h /mnt/backups
+
+# Check current backup size
+du -sh /mnt/backups
+
+# Consider increasing `keep_last` to lower retention
+# Or enable archival to move old backups
+```
+
+### Restore Issues
+
+#### Restore fails with "backup file not found"
+
+```bash
+# List available backups
+ls -la /mnt/backups/
+
+# If using archive, check archive path
+ls -la /mnt/backup_archive/
+
+# Use correct path in restore command
+backuper restore --file /mnt/backups/backup_2024-01-15_120000.tar.gz \
+  --destination /tmp/restore
+```
+
+#### Checksum mismatch during restore
+
+```bash
+# Verify backup integrity first
+backuper verify --file /mnt/backups/backup_2024-01-15_120000.tar.gz
+
+# If mismatch, backup may be corrupted
+# Re-create backup or restore from different date
+backuper restore --date "2024-01-14" --archive-path /mnt/backup_archive
+```
+
+#### Decryption fails - "Unable to decrypt backup"
+
+```bash
+# Verify encryption is enabled in config
+grep -A 2 "\[encryption\]" config.toml
+
+# Verify master key exists and is readable
+sudo -u backup cat /etc/backuper/master.key
+
+# Restore with correct key path
+backuper restore --file backup_encrypted.tar.gz.enc \
+  --key-path /etc/backuper/master.key \
+  --destination /tmp/restore
+```
+
+### Encryption Issues
+
+#### Lost master key
+
+**⚠️ Encrypted backups cannot be recovered without the master key.**
+
+Prevention:
+- Store master key in secure location (vault, HSM, etc.)
+- Keep backup of master key in secure offline storage
+- Document key location in your runbook
+
+### Remote Backup Issues
+
+#### SSH connection refused
+
+```bash
+# Test SSH manually
+ssh -i ~/.ssh/id_ed25519_backup backup@backup.example.com "ls -la /backups"
+
+# Check remote SSH service
+ssh backup@backup.example.com "sudo systemctl status ssh"
+
+# Check firewall
+ssh backup@backup.example.com "sudo ufw status"
+```
+
+#### Remote path doesn't exist or permission denied
+
+```bash
+# Create directory on remote
+ssh backup@backup.example.com "mkdir -p /backups/server-name"
+
+# Check permissions
+ssh backup@backup.example.com "ls -la /backups/"
+
+# Make writable by backup user
+ssh backup@backup.example.com "chmod 755 /backups/server-name"
+```
+
+#### Backup succeeds but no files on remote
+
+```bash
+# Check if local backup succeeded first
+ls -la /mnt/backups/
+
+# Check remote manually
+ssh backup@backup.example.com "ls -la /backups/server-name/"
+
+# View systemd logs for error details
+sudo journalctl -u backuper.service -p err
+```
+
+### Systemd Issues
+
+#### Timer never runs
+
+```bash
+# Check if timer is enabled and active
+sudo systemctl status backuper.timer
+
+# Check timer configuration
+sudo systemctl cat backuper.timer
+
+# Check next run time
+systemctl list-timers backuper.timer
+
+# Enable if not enabled
+sudo systemctl enable backuper.timer
+sudo systemctl start backuper.timer
+```
+
+#### Service fails silently
+
+```bash
+# Check service status
+sudo systemctl status backuper.service
+
+# View detailed logs
+sudo journalctl -u backuper.service -n 100
+
+# Run manually to see errors
+sudo -u backup /usr/local/bin/backuper backup --config /etc/backuper/config.toml
+```
+
+## 🏗️ Architecture
+
+### Project Structure
+
+```
+backuper_app/
+├── backup/                      # Core backup operations
+│   ├── backuper.py             # Main backup orchestration
+│   ├── compression.py          # gzip/zstd compression
+│   ├── encryption.py           # AES-GCM encryption
+│   ├── retention.py            # Backup rotation policy
+│   ├── archive.py              # Archive management
+│   ├── restore.py              # Restore operations
+│   ├── verify.py               # Integrity verification
+│   ├── analyzer.py             # File analysis & filtering
+│   ├── filter_engine.py        # Include/exclude patterns
+│   ├── manifest.py             # Backup metadata
+│   ├── initializer.py          # Config initialization
+│   └── remote.py               # SSH remote sync
+├── config/
+│   └── config.py               # TOML config parsing
+├── cli.py                       # CLI argument parsing
+├── main.py                      # Entry point
+├── dto.py                       # Data transfer objects
+├── exception.py                 # Custom exceptions
+└── utils/
+    ├── logger.py               # Logging (stdout)
+    ├── checksum.py             # SHA256 hashing
+    ├── capacity.py             # Size calculations
+    ├── archive_resolver.py     # Archive path resolution
+    └── temporary.py            # Temporary workspace
+```
+
+### Backup Workflow
+
+```
+1. Load Config (TOML)
+   ↓
+2. Analyze Source (filter include/exclude)
+   ↓
+3. Create Compressed Archive (gzip/zstd)
+   ↓
+4. Encrypt (if enabled)
+   ↓
+5. Generate Checksum
+   ↓
+6. Apply Retention Policy
+   ├─ Keep last N backups
+   ├─ Archive or delete old backups
+   └─ Update manifest
+   ↓
+7. Sync to Remote (if configured)
+   └─ SSH push to remote_path
+```
+
+### Restore Workflow
+
+```
+1. Receive Restore Request (file/date)
+   ↓
+2. Locate Backup File
+   ├─ Check local destination
+   └─ Check archive if needed
+   ↓
+3. Validate Checksum
+   ↓
+4. Decrypt (if encrypted, requires key)
+   ↓
+5. Extract to Destination
+   └─ Restore permissions & metadata
+```
+
+### File Format
+
+**Backup File Naming:** `backup_YYYY-MM-DD_HHMMSS.tar.{gz|zst}[.enc]`
+
+**Manifest File:** `.backup_manifest` (JSON metadata)
+
+**Checksum File:** `.backup_checksum` (SHA256 hash)
+
+## 💡 Best Practices
+
+1. **Always dry-run first:** `backuper backup --config config.toml --dry-run`
+2. **Test restore:** Periodically test restoring from backups to verify integrity
+3. **Encrypt sensitive data:** Enable encryption for confidential backups
+4. **Use retention policy:** Keep last N backups to save storage and manage rotation
+5. **Archive instead of delete:** Enable archival to preserve backups for longer periods
+6. **Monitor logs:** Regular check `journalctl` output for errors or anomalies
+7. **Secure master key:** Store encryption key securely, consider using a vault
+8. **SSH key management:** Use SSH keys instead of passwords, restrict key permissions
+9. **Test remote sync:** Verify SSH connection works before relying on remote backup
+10. **Document config:** Add comments in TOML config explaining each backup job
+
+## 📊 Performance Tuning
+
+- **Compression ratio:** zstd > gzip (storage) but gzip > zstd (speed)
+- **Retention policy:** Lower `keep_last` to save disk space; higher for safety
+- **Filtering:** Tight `exclude` patterns reduce processing time
+- **Encryption:** Adds ~5-10% overhead; acceptable for most scenarios
+- **Systemd timing:** Avoid peak hours; schedule backups during low-usage periods
+
+## 📄 License
+
+MIT License - See LICENSE file for details
+
+## 🔗 Resources
+
+- **GitHub:** [Finsa-SC/File_Backuper](https://github.com/Finsa-SC/File_Backuper)
+- **PyPI:** [file-backuper](https://pypi.org/project/file-backuper/)
+- **Issues:** [GitHub Issues](https://github.com/Finsa-SC/File_Backuper/issues)
 
 ---
 
-## Version Info
-
-**Current version:** 1.2.0  
-**Python requirement:** >= 3.14  
-**Latest release:** [v1.2.0](https://github.com/Finsa-SC/backup-service/releases/tag/v1.2.0)
+**Made with ❤️ for reliable backups**
