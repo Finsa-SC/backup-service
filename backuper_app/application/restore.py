@@ -1,7 +1,7 @@
 from pathlib import Path
-from backuper_app.utils import get_logger
+from backuper_app.infrastructure import get_logger
 import subprocess
-from backuper_app.backup.compression import resolve_compression_from_suffix
+from backuper_app.domain.backup.compression import resolve_compression_from_suffix
 
 logger = get_logger(__name__)
 

@@ -3,7 +3,7 @@ from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from pathlib import Path
 from backuper_app.exception import EncryptionError, BackuperError
-from backuper_app.utils import TemporaryWorkspace
+from backuper_app.infrastructure import TemporaryWorkspace
 from backuper_app.validation import validate_encrypted_file_not_malformed, validate_encryption_version
 
 CHUNK_SIZE = 8 * 1024 * 1024
@@ -78,7 +78,7 @@ class Encryption:
         ):
             self._encrypt(aesgcm, file_in, file_out)
 
-        # Cleanup plain backup
+        # Cleanup plain domain
         if encrypted_path.exists(follow_symlinks=True):
             file_path.unlink(missing_ok=True)
 
@@ -92,7 +92,7 @@ class Encryption:
 
         aesgcm = AESGCM(self.__master_key)
 
-        # Validate encrypted backup structure
+        # Validate encrypted domain structure
         validate_encrypted_file_not_malformed(enc_file_path)
 
         with (
@@ -102,7 +102,7 @@ class Encryption:
             try:
                 self._decrypt(aesgcm, file_in, file_out)
             except InvalidTag:
-                raise EncryptionError("Unable to decrypt backup: invalid key or corrupted backup")
+                raise EncryptionError("Unable to decrypt domain: invalid key or corrupted domain")
 
         return Path(decrypted_file)
 

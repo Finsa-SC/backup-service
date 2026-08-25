@@ -1,7 +1,7 @@
 import tomllib
 from pathlib import Path
 from dataclasses import dataclass
-from backuper_app.utils import get_logger
+from backuper_app.infrastructure import get_logger
 from backuper_app.exception import BackuperError, ConfigurationError
 from backuper_app.validation import get_validate_file_mode, get_validate_config_path
 

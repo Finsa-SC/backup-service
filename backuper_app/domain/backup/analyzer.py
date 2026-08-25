@@ -1,5 +1,7 @@
 from pathlib import Path
-from backuper_app.utils import get_logger
+from backuper_app.infrastructure import (
+    get_logger, analyze_estimate_size, format_size
+)
 
 logger = get_logger(__name__)
 
@@ -47,8 +49,6 @@ class Analyzer:
         return mapping
 
     def show_statistic(self, file_statistic: dict[str, int]) -> None:
-        from backuper_app.utils import analyze_estimate_size, format_size
-
         logger.info("Starting dry run...")
 
         #Backup info

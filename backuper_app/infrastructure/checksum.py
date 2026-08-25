@@ -1,5 +1,3 @@
-from os import name
-
 from backuper_app.exception import ChecksumNotFoundError, ChecksumMismatchError, BackuperError
 from pathlib import Path
 import hashlib

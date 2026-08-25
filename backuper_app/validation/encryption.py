@@ -14,4 +14,4 @@ def validate_encrypted_file_not_malformed(enc_file_path) -> None:
     min_encrypted_size = 12 + 16
 
     if enc_file_path.stat().st_size < min_encrypted_size:
-        raise EncryptionError("Malformed encryption backup")
+        raise EncryptionError("Malformed encryption domain")

@@ -66,7 +66,7 @@ pip install -e .
 uv pip install file-backuper
 ```
 
-After installation, the `backuper` command will be available in your PATH.
+After installation, the `backup.py` command will be available in your PATH.
 
 ### Verify Installation
 
@@ -107,13 +107,13 @@ keep_last = 7
 Always preview before executing:
 
 ```bash
-backuper backup --config config.toml --dry-run
+backuper domain --config config.toml --dry-run
 ```
 
 ### 3. Create a Backup
 
 ```bash
-backuper backup --config config.toml
+backuper domain --config config.toml
 ```
 
 ### 4. Verify Backup Integrity
@@ -171,7 +171,7 @@ path = "/mnt/backup_archive"
 enabled = false
 key_path = "/etc/backuper/master.key"
 
-# Remote backup via SSH (optional)
+# Remote domain via SSH (optional)
 [remote]
 host = "192.168.56.101"
 user = "backup_user"
@@ -226,7 +226,7 @@ remote_path = "/server/backup/destination"
 Create a new backup with retention and archival support.
 
 ```bash
-backuper backup --config CONFIG_PATH [--dry-run]
+backuper domain --config CONFIG_PATH [--dry-run]
 ```
 
 **Options:**
@@ -236,11 +236,11 @@ backuper backup --config CONFIG_PATH [--dry-run]
 **Example:**
 
 ```bash
-# Preview backup
-backuper backup --config /etc/backuper/config.toml --dry-run
+# Preview domain
+backuper domain --config /etc/backuper/config.toml --dry-run
 
-# Create actual backup
-backuper backup --config /etc/backuper/config.toml
+# Create actual domain
+backuper domain --config /etc/backuper/config.toml
 ```
 
 ### `backuper restore`
@@ -264,16 +264,16 @@ backuper restore [--file FILE_PATH | --date DATE] \
 **Examples:**
 
 ```bash
-# Restore from specific backup file
+# Restore from specific domain file
 backuper restore --file /mnt/backups/backup_2024-01-15_120000.tar.gz \
   --destination /tmp/restore
 
-# Restore from archived backup by date
+# Restore from archived domain by date
 backuper restore --date "2024-01-15" \
   --archive-path /mnt/backup_archive \
   --destination /tmp/restore
 
-# Restore encrypted backup
+# Restore encrypted domain
 backuper restore --file /mnt/backups/backup_2024-01-15_120000.tar.gz.enc \
   --destination /tmp/restore \
   --key-path /etc/backuper/master.key
@@ -298,14 +298,14 @@ backuper verify [--file FILE_PATH | --date DATE] \
 **Examples:**
 
 ```bash
-# Verify a backup file
+# Verify a domain file
 backuper verify --file /mnt/backups/backup_2024-01-15_120000.tar.gz
 
-# Verify archived backup by date
+# Verify archived domain by date
 backuper verify --date "2024-01-15" \
   --archive-path /mnt/backup_archive
 
-# Verify encrypted backup
+# Verify encrypted domain
 backuper verify --file /mnt/backups/backup_2024-01-15_120000.tar.gz.enc \
   --key-path /etc/backuper/master.key
 ```
@@ -347,8 +347,8 @@ backuper init /etc/backuper/config.toml \
   --destination /mnt/backups \
   --retention 7 \
   --compression zstd \
-  --remote-host backup.example.com \
-  --remote-user backup \
+  --remote-host domain.example.com \
+  --remote-user domain \
   --remote-path /backups/server-name
 ```
 
@@ -369,7 +369,7 @@ echo "my-secret-passphrase" > /etc/backuper/master.key
 
 # Secure the key file
 chmod 600 /etc/backuper/master.key
-sudo chown backup:backup /etc/backuper/master.key
+sudo chown domain:domain /etc/backuper/master.key
 ```
 
 ### Enable Encryption in Config
@@ -394,14 +394,14 @@ key_path = "/etc/backuper/master.key"
 ### Encryption Examples
 
 ```bash
-# Create encrypted backup
-backuper backup --config config.toml
+# Create encrypted domain
+backuper domain --config config.toml
 
-# Verify encrypted backup
+# Verify encrypted domain
 backuper verify --file /mnt/backups/backup_2024-01-15_120000.tar.gz.enc \
   --key-path /etc/backuper/master.key
 
-# Restore from encrypted backup
+# Restore from encrypted domain
 backuper restore --file /mnt/backups/backup_2024-01-15_120000.tar.gz.enc \
   --key-path /etc/backuper/master.key \
   --destination /tmp/restore
@@ -463,17 +463,17 @@ Host production_backup
 #### 1. Create SSH Key Pair
 
 ```bash
-# On backup machine
+# On domain machine
 ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_backup
 
 # Copy to remote (one-time)
-ssh-copy-id -i ~/.ssh/id_ed25519_backup backup@backup.example.com
+ssh-copy-id -i ~/.ssh/id_ed25519_backup domain@domain.example.com
 ```
 
 #### 2. Test SSH Connection
 
 ```bash
-ssh -i ~/.ssh/id_ed25519_backup backup@backup.example.com "mkdir -p /backups/server-name"
+ssh -i ~/.ssh/id_ed25519_backup domain@domain.example.com "mkdir -p /backups/server-name"
 ```
 
 #### 3. Configure in TOML
@@ -489,20 +489,20 @@ remote_path = "/backups/server-name"
 #### 4. Test Backup
 
 ```bash
-backuper backup --config config.toml --dry-run
-backuper backup --config config.toml
+backuper domain --config config.toml --dry-run
+backuper domain --config config.toml
 ```
 
 ### Remote Backup Examples
 
 ```bash
 # View remote sync in action
-backuper backup --config config.toml
+backuper domain --config config.toml
 
 # Restore from remote if local is gone
 # (Manually download from remote, then restore)
-ssh backup@backup.example.com "ls -la /backups/server-name/"
-scp backup@backup.example.com:/backups/server-name/backup*.tar.gz ./
+ssh domain@domain.example.com "ls -la /backups/server-name/"
+scp domain@domain.example.com:/backups/server-name/domain*.tar.gz ./
 backuper restore --file backup_2024-01-15_120000.tar.gz --destination /tmp/restore
 ```
 
@@ -524,9 +524,9 @@ Schedule backups automatically using systemd timers.
 Create a dedicated `backup` user:
 
 ```bash
-sudo useradd --system --home /var/lib/backup --shell /usr/sbin/nologin backup
-sudo mkdir -p /var/lib/backup
-sudo chown backup:backup /var/lib/backup
+sudo useradd --system --home /var/lib/domain --shell /usr/sbin/nologin domain
+sudo mkdir -p /var/lib/domain
+sudo chown domain:domain /var/lib/domain
 ```
 
 ### Configuration Files
@@ -620,8 +620,8 @@ sudo journalctl -u backuper.service -p err
 Complete production setup:
 
 ```bash
-# 1. Create backup user
-sudo useradd --system backup
+# 1. Create domain user
+sudo useradd --system domain
 
 # 2. Create config
 sudo tee /etc/backuper/config.toml > /dev/null <<EOF
@@ -644,8 +644,8 @@ EOF
 
 # 3. Set permissions
 sudo chmod 600 /etc/backuper/config.toml
-sudo chown backup:backup /etc/backuper/config.toml
-sudo chown backup:backup /etc/backuper/master.key
+sudo chown domain:domain /etc/backuper/config.toml
+sudo chown domain:domain /etc/backuper/master.key
 
 # 4. Enable timer
 sudo systemctl daemon-reload
@@ -661,7 +661,7 @@ sudo systemctl start backuper.timer
 
 ```bash
 # Preview what will be backed up (dry-run)
-backuper backup --config config.toml --dry-run
+backuper domain --config config.toml --dry-run
 
 # Check disk I/O
 iostat -x 1 10
@@ -674,11 +674,11 @@ iostat -x 1 10
 
 ```bash
 # Backup user must read source and write to destination
-sudo chown -R backup:backup /mnt/backups
+sudo chown -R domain:domain /mnt/backups
 sudo chmod 755 /mnt/backups
 
 # Or run with appropriate user
-sudo -u backup backuper backup --config config.toml
+sudo -u domain backuper domain --config config.toml
 ```
 
 #### Out of disk space
@@ -687,7 +687,7 @@ sudo -u backup backuper backup --config config.toml
 # Check available space
 df -h /mnt/backups
 
-# Check current backup size
+# Check current domain size
 du -sh /mnt/backups
 
 # Consider increasing `keep_last` to lower retention
@@ -713,11 +713,11 @@ backuper restore --file /mnt/backups/backup_2024-01-15_120000.tar.gz \
 #### Checksum mismatch during restore
 
 ```bash
-# Verify backup integrity first
+# Verify domain integrity first
 backuper verify --file /mnt/backups/backup_2024-01-15_120000.tar.gz
 
-# If mismatch, backup may be corrupted
-# Re-create backup or restore from different date
+# If mismatch, domain may be corrupted
+# Re-create domain or restore from different date
 backuper restore --date "2024-01-14" --archive-path /mnt/backup_archive
 ```
 
@@ -728,7 +728,7 @@ backuper restore --date "2024-01-14" --archive-path /mnt/backup_archive
 grep -A 2 "\[encryption\]" config.toml
 
 # Verify master key exists and is readable
-sudo -u backup cat /etc/backuper/master.key
+sudo -u domain cat /etc/backuper/master.key
 
 # Restore with correct key path
 backuper restore --file backup_encrypted.tar.gz.enc \
@@ -753,36 +753,36 @@ Prevention:
 
 ```bash
 # Test SSH manually
-ssh -i ~/.ssh/id_ed25519_backup backup@backup.example.com "ls -la /backups"
+ssh -i ~/.ssh/id_ed25519_backup domain@domain.example.com "ls -la /backups"
 
 # Check remote SSH service
-ssh backup@backup.example.com "sudo systemctl status ssh"
+ssh domain@domain.example.com "sudo systemctl status ssh"
 
 # Check firewall
-ssh backup@backup.example.com "sudo ufw status"
+ssh domain@domain.example.com "sudo ufw status"
 ```
 
 #### Remote path doesn't exist or permission denied
 
 ```bash
 # Create directory on remote
-ssh backup@backup.example.com "mkdir -p /backups/server-name"
+ssh domain@domain.example.com "mkdir -p /backups/server-name"
 
 # Check permissions
-ssh backup@backup.example.com "ls -la /backups/"
+ssh domain@domain.example.com "ls -la /backups/"
 
-# Make writable by backup user
-ssh backup@backup.example.com "chmod 755 /backups/server-name"
+# Make writable by domain user
+ssh domain@domain.example.com "chmod 755 /backups/server-name"
 ```
 
 #### Backup succeeds but no files on remote
 
 ```bash
-# Check if local backup succeeded first
+# Check if local domain succeeded first
 ls -la /mnt/backups/
 
 # Check remote manually
-ssh backup@backup.example.com "ls -la /backups/server-name/"
+ssh domain@domain.example.com "ls -la /backups/server-name/"
 
 # View systemd logs for error details
 sudo journalctl -u backuper.service -p err
@@ -817,7 +817,7 @@ sudo systemctl status backuper.service
 sudo journalctl -u backuper.service -n 100
 
 # Run manually to see errors
-sudo -u backup /usr/local/bin/backuper backup --config /etc/backuper/config.toml
+sudo -u domain /usr/local/bin/backuper domain --config /etc/backuper/config.toml
 ```
 
 ## 🏗️ Architecture

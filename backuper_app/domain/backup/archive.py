@@ -1,5 +1,5 @@
 from pathlib import Path
-from backuper_app.utils import get_logger
+from backuper_app.infrastructure import get_logger
 from datetime import datetime
 
 logger = get_logger(__name__)

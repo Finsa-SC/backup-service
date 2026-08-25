@@ -111,13 +111,13 @@ class RemoteBackup:
             )
 
             if not self.is_success_send_backup(sftp):
-                raise BackuperError("File backup to remote failed")
+                raise BackuperError("File domain to remote failed")
 
         except FileNotFoundError:
             raise BackuperError(f"Remote path does not exist: {self.remote_path}")
         except SSHException as e:
             raise BackuperError(
-                "Unable to upload backup to remote path",
+                "Unable to upload domain to remote path",
                 f"'{self.remote_path}'"
             ) from e
 

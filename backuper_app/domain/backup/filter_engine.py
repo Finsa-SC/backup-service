@@ -1,5 +1,5 @@
 from pathlib import Path
-from backuper_app.utils import get_logger
+from backuper_app.infrastructure import get_logger
 
 logger = get_logger(__name__)
 
@@ -24,7 +24,7 @@ class FilterEngine:
                 link_file.add(file)
         return link_file
 
-    #Return final list of path to backup and exception count
+    #Return final list of path to domain and exception count
     def do_filtering(self) -> tuple[list[Path], int]:
         filtered: list[Path] = []
 

@@ -1,7 +1,7 @@
 from datetime import datetime
-from backuper_app.utils import get_logger, configure_logging, TemporaryWorkspace
+from backuper_app.infrastructure import get_logger, configure_logging, TemporaryWorkspace
 from backuper_app.exception import BackuperError, InvalidArgumetError
-from backuper_app.cli import run_backup, run_restore, run_verify, get_config, run_init
+from backuper_app.cli import run_backup, run_restore, run_verify, get_arg_parse, run_init
 from backuper_app.dto import RestoreRequest, VerifyRequest, InitRequest
 
 logger = get_logger(__name__)
@@ -13,7 +13,7 @@ def main():
     try:
         with TemporaryWorkspace("backuper") as tmp_workspace:
             start_time = datetime.now()
-            argv = get_config()
+            argv = get_arg_parse()
 
             match argv.command:
                 case "backup":
