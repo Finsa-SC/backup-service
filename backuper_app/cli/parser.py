@@ -210,12 +210,14 @@ def get_arg_parse():
     )
     validate_mode.add_argument(
         "--config",
+        type=Path,
+        default=None,
+        required=True,
         help="Path to your config file you want to validate."
     )
 
     return parser.parse_args()
 
-def load_config(argsv):
-    config_path = Path(argsv.config)
+def load_config(config_path: Path):
     backup_config = Config(config_path)
     return backup_config.set_config()

@@ -1,6 +1,4 @@
-from pathlib import Path
-
-from backuper_app.exception import ConfigurationError, BackuperError
+from backuper_app.exception import ConfigurationError
 
 PERMISSION_MODE = [
     "0", "1", "2", "3",
@@ -20,20 +18,9 @@ def get_validate_file_mode(mode) -> int | None:
 
     for perm in mode:
         if perm not in PERMISSION_MODE:
-            raise ConfigurationError("Invalid permission got")
+            raise ConfigurationError(f"Invalid file mode: got '{mode}', expected three octal digits (0-7), e.g. 600")
 
     try:
         return int(mode, 8)
     except Exception:
         raise ConfigurationError(f"Invalid permission, got {mode}. Expected like 640")
-
-
-def get_validate_config_path(hint: str, path) -> Path:
-    if not path.strip():
-        raise ConfigurationError(f"{hint} path is not set, make sure the target path is configured in your config")
-
-    path = Path(path)
-    if not path.exists():
-        raise BackuperError(f"{hint} path not found: {path}")
-
-    return path

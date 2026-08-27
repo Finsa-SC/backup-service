@@ -1,6 +1,7 @@
 from paramiko import SSHClient, SSHConfig, SFTPClient, RejectPolicy, SSHException
 from pathlib import Path
 
+from backuper_app.dto import RemoteConfig
 from backuper_app.exception import BackuperError
 from backuper_app.validation import validate_ssh_config
 
@@ -10,23 +11,19 @@ KNOWN_HOST_PATH = Path("~/.ssh/known_hosts").expanduser()
 class RemoteBackup:
     def __init__(
             self,
-            remote_path:str,
             backup_list: list[Path],
-            port:int,
-            hostname:str|None=None,
-            username:str|None=None,
-            identity_file:str|None=None,
-            alias:str|None=None
+            remote_config: RemoteConfig
         ):
-        self.hostname = hostname
-        self.username = username
-        self.port = port
-        self.alias = alias
-        self.remote_path = remote_path
+        self.hostname = remote_config.host
+        self.username = remote_config.user
+        self.port = remote_config.port
+        self.alias = remote_config.alias
+        self.remote_path = remote_config.remote_path
         self.backup_list = backup_list
 
-        if identity_file:
-            identity_file = Path(identity_file).expanduser()
+        identity_file = None
+        if remote_config.identity_file:
+            identity_file = Path(remote_config.identity_file).expanduser()
             identity_file = str(identity_file)
         self.identity_file = identity_file
 

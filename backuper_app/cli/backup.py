@@ -2,7 +2,7 @@ from backuper_app.application.backup import Backuper
 from backuper_app.application.verify import verify_backup
 from .parser import load_config, get_arg_parse
 from backuper_app.domain import Encryption, RemoteBackup, Archive, Retention
-from backuper_app.dto import BackupPlan
+from backuper_app.dto import BackupPlan, RemoteConfig
 from backuper_app.infrastructure import TemporaryWorkspace, get_logger, format_size
 from backuper_app.validation import validate_archive
 
@@ -11,7 +11,8 @@ logger = get_logger(__name__)
 def run_backup(dry_run: bool, workspace: TemporaryWorkspace):
     from backuper_app.infrastructure import make_hash
 
-    config = load_config(get_arg_parse())
+    config_path = get_arg_parse()
+    config = load_config(config_path.config)
 
     validate_archive(config.archive_path, config.archive_enabled, keep_last=config.keep_last)
 
@@ -22,6 +23,17 @@ def run_backup(dry_run: bool, workspace: TemporaryWorkspace):
         logger.info(f"Compression: {config.compression}")
 
     parent_path = config.target.parent
+
+    # Set remote config
+    remote_config = RemoteConfig(
+        enabled=config.remote_enabled,
+        host=config.remote_host,
+        user=config.remote_user,
+        port=config.remote_port,
+        identity_file=config.identity_file,
+        alias=config.alias,
+        remote_path=config.remote_path
+    )
 
     backup_plan = BackupPlan(
         target_path=config.target,
@@ -42,8 +54,7 @@ def run_backup(dry_run: bool, workspace: TemporaryWorkspace):
 
         encryption_enabled=config.encryption_enabled,
 
-        remote_enabled=config.remote_enabled,
-        remote_path=config.remote_path,
+        remote_config=remote_config
     )
 
     backuper = Backuper(
@@ -80,14 +91,10 @@ def run_backup(dry_run: bool, workspace: TemporaryWorkspace):
     # Do remote domain if enabled
     if config.remote_enabled:
         will_send_remote = [checksum_path, backup_path]
+
         remote = RemoteBackup(
-            remote_path=config.remote_backup,
             backup_list=will_send_remote,
-            hostname=config.remote_host,
-            username=config.remote_user,
-            port=config.remote_port,
-            identity_file=config.identity_file,
-            alias=config.alias,
+            remote_config=remote_config
         )
         remote.do_remote()
 

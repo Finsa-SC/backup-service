@@ -1,4 +1,6 @@
 from pathlib import Path
+
+from backuper_app.dto import BackupPlan
 from backuper_app.infrastructure import (
     get_logger, analyze_estimate_size, format_size
 )
@@ -10,7 +12,7 @@ class Analyzer:
             self,
             files: list[Path],
             backup_total: int,
-            backup_plan,
+            backup_plan: BackupPlan,
     ):
         self.files              = files
         self.backup_total       = backup_total
@@ -29,8 +31,7 @@ class Analyzer:
 
         self.encryption_enabled = backup_plan.encryption_enabled
 
-        self.remote_enabled     = backup_plan.remote_enabled
-        self.remote_path        = backup_plan.remote_path
+        self.remote_config      = backup_plan.remote_config
 
     def get_file_statistic(self) -> dict[str, int]:
         mapping = dict(file=0, directory=0, symlink=0, socket=0, unknown=0)
@@ -87,8 +88,8 @@ class Analyzer:
         Archive      : {self.archive_enabled}
         Archive Path : {self.archive_path if self.archive_enabled and self.archive_path.is_dir() else "-"}
         Keep last    : {self.retention if self.retention else '-'}
-        Remote       : {self.remote_enabled}
-        Remote Path  : {self.remote_path if self.remote_path else "-"}
+        Remote       : {self.remote_config.enabled}
+        Remote Path  : {self.remote_config.remote_path if self.remote_config.remote_path else "-"}
         """)
 
         logger.info("""

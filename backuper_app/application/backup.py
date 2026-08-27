@@ -39,9 +39,6 @@ class Backuper:
 
         self.encryption_enabled = backup_plan.encryption_enabled
 
-        self.remote_enabled     = backup_plan.remote_enabled
-        self.remote_path        = backup_plan.remote_path
-
         self.workspace          = workspace
 
         if not self.target_path.is_relative_to(self.parent_path):
@@ -126,7 +123,7 @@ class Backuper:
                 Required : {format_size(required_space)}
                 Available: {format_size(space_available)}
                 Destination: {self.destination_path}
-                """)
+            """)
 
             backup_name = self.set_backup_name(self.backup_name)
 
