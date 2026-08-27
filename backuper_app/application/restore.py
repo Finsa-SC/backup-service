@@ -1,7 +1,7 @@
 from pathlib import Path
-from backuper_app.utils import get_logger
+from backuper_app.infrastructure import get_logger
 import subprocess
-from backuper_app.backup.compression import resolve_compression_from_suffix
+from backuper_app.domain.backup.compression import resolve_compression_from_suffix
 
 logger = get_logger(__name__)
 
@@ -39,8 +39,3 @@ class Restore:
 
         self._extract_archive(archive_file=self.file_path)
         return self.extract_path
-
-if __name__ == "__main__":
-    ...
-    # restore = Restore(date="2026-07-31", archive_path=Path("/home/silence-suzuka/backup_archive"))
-    # restore.do_restore()

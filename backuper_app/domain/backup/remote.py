@@ -1,6 +1,9 @@
 from paramiko import SSHClient, SSHConfig, SFTPClient, RejectPolicy, SSHException
 from pathlib import Path
-from backuper_app.exception import ConfigurationError, BackuperError
+
+from backuper_app.dto import RemoteConfig
+from backuper_app.exception import BackuperError
+from backuper_app.validation import validate_ssh_config
 
 CONFIG_PATH = Path("~/.ssh/config").expanduser()
 KNOWN_HOST_PATH = Path("~/.ssh/known_hosts").expanduser()
@@ -8,47 +11,21 @@ KNOWN_HOST_PATH = Path("~/.ssh/known_hosts").expanduser()
 class RemoteBackup:
     def __init__(
             self,
-            remote_path:str,
             backup_list: list[Path],
-            port:int,
-            hostname:str|None=None,
-            username:str|None=None,
-            identity_file:str|None=None,
-            alias:str|None=None
+            remote_config: RemoteConfig
         ):
-        self.hostname = hostname
-        self.username = username
-        self.port = port
-        self.alias = alias
-        self.remote_path = remote_path
+        self.hostname = remote_config.host
+        self.username = remote_config.user
+        self.port = remote_config.port
+        self.alias = remote_config.alias
+        self.remote_path = remote_config.remote_path
         self.backup_list = backup_list
 
-        if identity_file:
-            identity_file = Path(identity_file).expanduser()
+        identity_file = None
+        if remote_config.identity_file:
+            identity_file = Path(remote_config.identity_file).expanduser()
             identity_file = str(identity_file)
         self.identity_file = identity_file
-
-
-    @staticmethod
-    def validate_ssh_config(
-        hostname: str|None,
-        username: str|None,
-        port: int,
-        remote_path: str
-    ):
-        if not hostname or not hostname.strip():
-            raise ConfigurationError("Hostname unfilled")
-
-        if not username or not username.strip():
-            raise ConfigurationError("Username is not set")
-
-        if not isinstance(port, int):
-            raise ConfigurationError("Port is not set")
-        elif not (1 <= port <= 65535):
-            raise ConfigurationError("Invalid port configuration")
-
-        if not remote_path.strip():
-            raise ConfigurationError("Remote path is not set")
 
     @staticmethod
     def load_ssh_config(alias):
@@ -105,7 +82,8 @@ class RemoteBackup:
             self.identity_file = host_config.get("identityfile", None)
         else:
             self.identity_file = [self.identity_file] if self.identity_file and self.identity_file.strip() else None
-        self.validate_ssh_config(
+
+        validate_ssh_config(
             self.hostname,
             username=self.username,
             port=self.port,
@@ -121,7 +99,6 @@ class RemoteBackup:
         )
 
         try:
-            # Validate destination path
             attr = sftp.stat(self.remote_path)
 
             self.transfer_backup(
@@ -131,19 +108,16 @@ class RemoteBackup:
             )
 
             if not self.is_success_send_backup(sftp):
-                raise BackuperError("File backup to remote failed")
+                raise BackuperError("File domain to remote failed")
+
         except FileNotFoundError:
             raise BackuperError(f"Remote path does not exist: {self.remote_path}")
         except SSHException as e:
             raise BackuperError(
-                "Unable to upload backup to remote path",
+                "Unable to upload domain to remote path",
                 f"'{self.remote_path}'"
             ) from e
 
         finally:
             sftp.close()
             ssh.close()
-
-if __name__ == "__main__":
-    remote = RemoteBackup("agus", "ahmad", 22, "ambatukan/")
-    remote.do_remote()

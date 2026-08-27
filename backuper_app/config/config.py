@@ -1,15 +1,11 @@
 import tomllib
 from pathlib import Path
 from dataclasses import dataclass
-from backuper_app.utils import get_logger
+from backuper_app.infrastructure import get_logger
 from backuper_app.exception import BackuperError, ConfigurationError
+from backuper_app.validation import get_validate_file_mode, get_validate_config_path
 
 logger = get_logger(__name__)
-
-PERMISSION_MODE = [
-    "0", "1", "2", "3",
-    "4", "5", "6", "7",
-]
 
 @dataclass
 class BackupConfig:
@@ -65,27 +61,6 @@ class Config:
         else:
             return target_backup.name
 
-    @staticmethod
-    def _get_validate_file_mode(mode) -> int|None:
-        if not mode:
-            return None
-
-        if not isinstance(mode, str):
-            raise ConfigurationError(f"Invalid file mode type: got {type(mode)}, expected 'str'")
-
-        len_mode = len(mode)
-        if not len_mode == 3:
-            raise ConfigurationError(f"Invalid len of file mode: got {len_mode} len, expected 3 len")
-
-        for perm in mode:
-            if perm not in  PERMISSION_MODE:
-                raise ConfigurationError("Invalid permission got")
-
-        try:
-            return int(mode, 8)
-        except Exception:
-            raise ConfigurationError(f"Invalid permission, got {mode}. Expected like 640")
-
     def set_config(self) -> BackupConfig:
         config = self._get_config()
         backup = config["backup"]
@@ -95,31 +70,22 @@ class Config:
         encryption = config['encryption']
         remote = config['remote']
 
-        def _validate_path(key: str, path) -> Path:
-            if not path.strip():
-                raise ConfigurationError(f"{key} path is not set, make sure the target path is configured in your config")
-
-            path = Path(path)
-            if not path.exists():
-                raise BackuperError(f"{key} path not found: {path}")
-
-            return path
 
         target_backup = backup.get('target', '')
-        target_backup = _validate_path('target', target_backup)
+        target_backup = get_validate_config_path('target', target_backup)
 
         destination_backup = backup.get('destination', '')
-        destination_backup = _validate_path("destination", destination_backup)
+        destination_backup = get_validate_config_path("destination", destination_backup)
 
         archive_backup = archive.get('path', '')
         archive_enabled = archive.get("enabled", False)
         if archive_enabled:
-            archive_backup = _validate_path("Archive", archive_backup)
+            archive_backup = get_validate_config_path("Archive", archive_backup)
 
         encryption_enabled = encryption.get('enabled', False)
         key_path = encryption.get('key_path', '')
         if encryption_enabled:
-            key_path = _validate_path("Master Key", key_path)
+            key_path = get_validate_config_path("Master Key", key_path)
 
         backup_name = self._set_backup_name(backup.get("backup_name", None), target_backup)
 
@@ -128,7 +94,7 @@ class Config:
             destination=destination_backup,
             backup_name=backup_name,
             compression=backup.get("compression", None),
-            file_mode=self._get_validate_file_mode(backup.get('file_mode', None)),
+            file_mode=get_validate_file_mode(backup.get('file_mode', None)),
 
             include=config_filter.get("include", None),
             exclude=config_filter.get("exclude", None),

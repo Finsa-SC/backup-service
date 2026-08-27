@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
+from backuper_app.validation import validate_compression
 
 @dataclass(frozen=True)
 class CompressionType:
@@ -7,8 +8,12 @@ class CompressionType:
     extract_flag: str
     suffix: str
 
-def resolve_compression_from_config(commpression_type: str):
-    return COMPRESSION[commpression_type]
+def resolve_compression_from_config(compression_type: str):
+    compression = COMPRESSION.get(compression_type, None)
+
+    validate_compression(compression, compression_type)
+
+    return compression
 
 def _get_compression_type(suffix: str) -> str:
     suffix = suffix.replace(".", "")

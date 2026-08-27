@@ -1,8 +1,11 @@
 from datetime import datetime
-from backuper_app.utils import get_logger, configure_logging, TemporaryWorkspace
+
+from backuper_app.application.validate import Validate
+from backuper_app.cli.validate import run_validate
+from backuper_app.infrastructure import get_logger, configure_logging, TemporaryWorkspace
 from backuper_app.exception import BackuperError, InvalidArgumetError
-from backuper_app.cli import run_backup, run_restore, run_verify, get_config, run_init
-from backuper_app.dto import RestoreRequest, VerifyRequest, InitRequest
+from backuper_app.cli import run_backup, run_restore, run_verify, get_arg_parse, run_init, load_config
+from backuper_app.dto import RestoreRequest, VerifyRequest, InitRequest, ValidateRequest, RemoteConfig
 
 logger = get_logger(__name__)
 
@@ -13,7 +16,7 @@ def main():
     try:
         with TemporaryWorkspace("backuper") as tmp_workspace:
             start_time = datetime.now()
-            argv = get_config()
+            argv = get_arg_parse()
 
             match argv.command:
                 case "backup":
@@ -59,6 +62,10 @@ def main():
                         remote_alias=argv.remote_alias,
                     )
                     run_init(request)
+                case "validate":
+                    config = load_config(argv.config)
+                    run_validate(config)
+
                 case _:
                     raise InvalidArgumetError(f"Invalid command {argv.command}")
 

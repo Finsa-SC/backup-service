@@ -1,5 +1,5 @@
 import logging, sys
-from logging import Logger, LogRecord
+from logging import Logger
 
 def configure_logging() -> None:
     logging.basicConfig(

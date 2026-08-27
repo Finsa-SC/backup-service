@@ -1,12 +1,16 @@
 import subprocess, datetime
 from pathlib import Path
-from backuper_app.utils import get_logger, not_enough_space, analyze_estimate_size, get_space_info, format_size, \
-    TemporaryWorkspace
+
+from backuper_app.infrastructure import (
+    get_logger, not_enough_space, analyze_estimate_size,
+    get_space_info, format_size, TemporaryWorkspace
+)
+from backuper_app.domain.backup import (
+    Analyzer, FilterEngine, resolve_compression_from_config,
+    create_manifest_data
+)
 from backuper_app.exception import NotEnoughDiskSpaceError, BackuperError
-from backuper_app.backup.analyzer import Analyzer
-from .filter_engine import FilterEngine
-from .compression import resolve_compression_from_config
-from .manifest import create_manifest_data
+from backuper_app.validation import validate_path
 
 logger = get_logger(__name__)
 
@@ -34,9 +38,6 @@ class Backuper:
         self.archive_path       = backup_plan.archive_path
 
         self.encryption_enabled = backup_plan.encryption_enabled
-
-        self.remote_enabled     = backup_plan.remote_enabled
-        self.remote_path        = backup_plan.remote_path
 
         self.workspace          = workspace
 
@@ -90,15 +91,8 @@ class Backuper:
         else:
             return backup_path
 
-    def _validate_backup_path(self):
-        if not self.target_path.exists():
-            raise BackuperError(f"Target path not found for {self.target_path}")
-
-        if not self.destination_path.exists():
-            raise BackuperError(f"Destination path not found for {self.destination_path}")
-
     def do_backup(self) -> Path:
-        self._validate_backup_path()
+        validate_path(self.target_path, self.destination_path)
 
         filter_engine = FilterEngine(
             target_path=self.target_path,
@@ -117,7 +111,7 @@ class Backuper:
             analyzer.analyze_statistic()
             exit(0)
 
-        # Do normal backup if --dry-run off
+        # Do normal domain if --dry-run off
         elif backup_list:
             required_space = analyze_estimate_size(files=backup_list)
             space_available = get_space_info(self.target_path)['space_available']
@@ -129,7 +123,7 @@ class Backuper:
                 Required : {format_size(required_space)}
                 Available: {format_size(space_available)}
                 Destination: {self.destination_path}
-                """)
+            """)
 
             backup_name = self.set_backup_name(self.backup_name)
 
@@ -153,7 +147,7 @@ class Backuper:
             # because if you don't do that, manifest path will save as absolute path
             manifest_relative_path = manifest_path.relative_to(workspace_path)
 
-            ###Compress backup
+            ###Compress domain
             backup_path = self.compress(
                 compression,
                 backup_path=backup_path,
