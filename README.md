@@ -927,9 +927,9 @@ MIT License - See LICENSE file for details
 
 ## 🔗 Resources
 
-- **GitHub:** [Finsa-SC/backup-service](https://github.com/Finsa-SC/File_Backuper)
+- **GitHub:** [Finsa-SC/backup-service](https://github.com/Finsa-SC/backup-service)
 - **PyPI:** [file-backuper](https://pypi.org/project/file-backuper/)
-- **Issues:** [GitHub Issues](https://github.com/Finsa-SC/File_Backuper/issues)
+- **Issues:** [GitHub Issues](https://github.com/Finsa-SC/backup-service/issues)
 
 ---
 
