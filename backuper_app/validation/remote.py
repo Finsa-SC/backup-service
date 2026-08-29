@@ -4,7 +4,7 @@ def validate_ssh_config(
         hostname: str | None,
         username: str | None,
         port: int,
-        remote_path: str
+        remote_path: str|None
 ):
     if not hostname or not hostname.strip():
         raise ConfigurationError("Hostname unfilled")

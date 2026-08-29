@@ -216,6 +216,35 @@ def get_arg_parse():
         help="Path to your config file you want to validate."
     )
 
+    # Systemd Integration
+    systemd_parser = subparser.add_parser(
+        name="systemd",
+        help="systemd integration",
+        description="Manage Backuper's systemd integration",
+    )
+    systemd_subparser = systemd_parser.add_subparsers(
+        dest="systemd_command",
+        required=True,
+    )
+
+    systemd_generate = systemd_subparser.add_parser(
+        name="generate",
+        help="Generate systemd units",
+        description="Generate Backuper systemd units",
+    )
+    systemd_generate.add_argument(
+        "jobs",
+        nargs="+",
+        choices=["backup", "test-restore"],
+        help="Systemd jobs to generate",
+    )
+    systemd_generate.add_argument(
+        "--destination",
+        type=Path,
+        default="/tmp",
+        help="Directory where systemd units will be generate",
+    )
+
     return parser.parse_args()
 
 def load_config(config_path: Path):
