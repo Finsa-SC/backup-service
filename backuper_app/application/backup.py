@@ -62,6 +62,7 @@ class Backuper:
         str_command = [
             "tar",
             compression.compress_flag,
+            "--no-recursion",
             "-cf",
             str(backup_path),
             "-C",
