@@ -47,7 +47,7 @@ class FilterEngine:
                     self.file_list.remove(file)
                     logger.debug(f"Removed: {file}")
 
-        #filter link file when link mode == ignore
+        #filter link file when link mode is ignore
         if self.link_mode == "ignore":
             for file in self.get_link_file():
                 if file in self.file_list:
