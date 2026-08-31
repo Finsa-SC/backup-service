@@ -1,9 +1,0 @@
-[Unit]
-Description=Backuper backup service
-
-[Service]
-Type=oneshot
-ExecStart={{ backuper_executable }} backup --config {{ config_path }}
-
-NoNewPrivileges=true
-PrivateTmp=true

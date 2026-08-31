@@ -4,3 +4,4 @@ from .restore import RestoreRequest
 from .verify import VerifyRequest
 from .remote import RemoteConfig
 from .validate import ValidateRequest
+from .systemd import SystemdRequest
