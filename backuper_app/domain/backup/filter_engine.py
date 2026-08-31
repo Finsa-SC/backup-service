@@ -54,7 +54,6 @@ class FilterEngine:
                     self.file_list.remove(file)
                     logger.debug(f"Removed: {file}")
 
-        print(self.file_list)
         return self.file_list, (filtered_count - len(self.file_list))
 
 if __name__ == "__main__":
