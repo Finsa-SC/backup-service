@@ -21,7 +21,7 @@ def get_validate_config_path(hint: str, path) -> Path:
     if not path.strip():
         raise ConfigurationError(f"{hint} path is not set, make sure the target path is configured in your config")
 
-    path = Path(path)
+    path = Path(path).expanduser()
     if not path.exists():
         raise BackuperError(f"{hint} path not found: {path}")
 
