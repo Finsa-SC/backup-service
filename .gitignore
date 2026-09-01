@@ -53,6 +53,7 @@ dist/
 build/
 *.egg-info/
 systemd/
+!templates/systemd/
 test/*
 !test/test.sh
 test_config.toml
