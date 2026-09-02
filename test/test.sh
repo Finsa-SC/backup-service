@@ -219,7 +219,7 @@ test_deep_directories() {
         return 1
     fi
 
-    if "$backuper" backup --config "$config" 1> /dev/null; then
+    if "$backuper" backup --config "$config" 0> /dev/null; then
         success "Deep directories backup passed"
     else
         failed "Deep directories backup failed"

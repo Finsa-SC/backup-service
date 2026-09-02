@@ -10,7 +10,7 @@ def format_size(size: float) -> str:
     byte = 1024.0
     for unit in units:
         if size <= byte:
-            return f"{size:f.2} {unit}" if unit != "B" else f"{size} {unit}"
+            return f"{size:.2f} {unit}" if unit != "B" else f"{size} {unit}"
         size /= byte
 
     return f"{size:.2f} PiB"
