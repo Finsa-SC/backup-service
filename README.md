@@ -1,6 +1,6 @@
 # File Backuper
 
-[![Release](https://img.shields.io/badge/release-v3.0.2-blue)](https://github.com/Finsa-SC/File_Backuper/releases)
+[![Release](https://img.shields.io/badge/release-v3.0.2-blue)](https://github.com/Finsa-SC/backup-service/releases)
 [![Python](https://img.shields.io/badge/python-3.14%2B-blue)](https://www.python.org/)
 [![PyPI](https://img.shields.io/badge/pypi-file--backuper-blue)](https://pypi.org/project/file-backuper/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
@@ -55,8 +55,8 @@ pip install file-backuper
 ### From Source
 
 ```bash
-git clone https://github.com/Finsa-SC/File_Backuper.git
-cd File_Backuper
+git clone https://github.com/Finsa-SC/backup-service.git
+cd backup-service
 pip install -e .
 ```
 
@@ -927,9 +927,9 @@ MIT License - See LICENSE file for details
 
 ## 🔗 Resources
 
-- **GitHub:** [Finsa-SC/File_Backuper](https://github.com/Finsa-SC/File_Backuper)
+- **GitHub:** [Finsa-SC/backup-service](https://github.com/Finsa-SC/backup-service)
 - **PyPI:** [file-backuper](https://pypi.org/project/file-backuper/)
-- **Issues:** [GitHub Issues](https://github.com/Finsa-SC/File_Backuper/issues)
+- **Issues:** [GitHub Issues](https://github.com/Finsa-SC/backup-service/issues)
 
 ---
 

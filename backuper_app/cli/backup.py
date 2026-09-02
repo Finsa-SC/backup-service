@@ -17,7 +17,7 @@ def run_backup(dry_run: bool, workspace: TemporaryWorkspace):
     validate_archive(config.archive_path, config.archive_enabled, keep_last=config.keep_last)
 
     if not dry_run:
-        logger.info(f"Starting domain service for {config.backup_name}")
+        logger.info(f"Starting backup service for {config.backup_name}")
         logger.info(f"Source: {config.target}")
         logger.info(f"Destination: {config.destination}")
         logger.info(f"Compression: {config.compression}")

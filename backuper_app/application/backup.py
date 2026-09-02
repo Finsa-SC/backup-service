@@ -96,10 +96,10 @@ class Backuper:
         validate_path(self.target_path, self.destination_path)
 
         filter_engine = FilterEngine(
-            target_path=self.target_path,
-            include=self.include,
-            exclude=self.exclude,
-            link_mode=self.link_mode,
+            target_path = self.target_path,
+            include     = self.include,
+            exclude     = self.exclude,
+            link_mode   = self.link_mode,
         )
         backup_list, backup_total = filter_engine.do_filtering()
 
@@ -142,6 +142,7 @@ class Backuper:
                 exclude         = self.exclude if self.exclude else [],
                 compression     = self.compression_type,
                 link_mode       = self.link_mode,
+                file_list       = backup_list
             )
 
             # resolve manifest relative path to store into compression
