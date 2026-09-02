@@ -3,20 +3,17 @@ from pathlib import Path
 
 def format_size(size: float) -> str:
     units = [
-        "B",
-        "KiB",
-        "MiB",
-        "GiB",
-        "TiB",
+        "B", "KiB", "MiB",
+        "GiB", "TiB",
     ]
 
-    byte = 1024
-    unit_index = 0
-    while size >= byte:
+    byte = 1024.0
+    for unit in units:
+        if size <= byte:
+            return f"{size:f.2} {unit}" if unit != "B" else f"{size} {unit}"
         size /= byte
-        unit_index += 1
 
-    return f"{size:.2f} {units[unit_index]}"
+    return f"{size:.2f} PiB"
 
 def get_space_info(path: Path) -> dict[str, int]:
     space_info = shutil.disk_usage(path)
