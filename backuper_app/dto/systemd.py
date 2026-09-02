@@ -3,5 +3,5 @@ from pathlib import Path
 
 @dataclass(frozen=True)
 class SystemdRequest:
-    job: list[str]
+    jobs: list[str]
     destination: Path

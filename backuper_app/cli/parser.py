@@ -242,7 +242,7 @@ def get_arg_parse():
         "--destination",
         type=Path,
         default="/tmp",
-        help="Directory where systemd units will be generate",
+        help="Directory where systemd units will be generate (default /tmp)",
     )
 
     return parser.parse_args()
