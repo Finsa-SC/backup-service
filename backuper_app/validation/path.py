@@ -26,3 +26,6 @@ def get_validate_config_path(hint: str, path) -> Path:
         raise BackuperError(f"{hint} path not found: {path}")
 
     return path
+
+def get_relative_path_list(parent_path: Path, path_list: list[Path]) -> list[Path]:
+    return [path.relative_to(parent_path) for path in path_list]

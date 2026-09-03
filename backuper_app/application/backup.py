@@ -1,5 +1,6 @@
-import subprocess, datetime
+import datetime
 from pathlib import Path
+from backuper_app.domain.backup import compress
 
 from backuper_app.infrastructure import (
     get_logger, not_enough_space, analyze_estimate_size,
@@ -47,50 +48,6 @@ class Backuper:
     @staticmethod
     def set_backup_name(backup_name: str) -> str:
         return f"{backup_name}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S_%f')}"
-
-    def get_relative_path_list(self, path_list: list[Path]) -> list[Path]:
-        return [path.relative_to(self.parent_path) for path in path_list]
-
-    def compress(
-            self,
-            compression,
-            backup_path: Path,
-            backup_list: list[Path],
-            workspace_path: Path,
-            manifest_relative_path: Path,
-    ) -> Path:
-        str_command = [
-            "tar",
-            compression.compress_flag,
-            "--no-recursion",
-            "-cf",
-            str(backup_path),
-            "-C",
-            str(self.parent_path),
-        ]
-
-        relative_backup = self.get_relative_path_list(backup_list)
-        str_command.extend(relative_backup)
-
-        # Insert manifest into compression command
-        manifest_command = [
-            "-C",
-            str(workspace_path),
-            str(manifest_relative_path),
-        ]
-        str_command.extend(manifest_command)
-
-        result = subprocess.run(
-            str_command,
-            capture_output=True,
-            text=True,
-        )
-
-        if result.returncode != 0:
-            backup_path.unlink(missing_ok=True)
-            raise ChildProcessError(result.stderr)
-        else:
-            return backup_path
 
     def do_backup(self) -> Path:
         validate_path(self.target_path, self.destination_path)
@@ -150,10 +107,11 @@ class Backuper:
             manifest_relative_path = manifest_path.relative_to(workspace_path)
 
             ###Compress domain
-            backup_path = self.compress(
+            backup_path = compress(
                 compression,
                 backup_path=backup_path,
                 backup_list=backup_list,
+                parent_path=self.parent_path,
                 workspace_path=workspace_path,
                 manifest_relative_path=manifest_relative_path,
             )
