@@ -1,3 +1,5 @@
+name: Test-Run
+
 on:
   pull_request:
     branches:
@@ -16,9 +18,12 @@ jobs:
         with:
           enable-cache: true
 
+      - name: Setup Python
+        run: uv python install 3.12
+
       - name: Install Project Dependencies
         run: |
-          uv sync
+          uv sync --dev
           uv pip install -e .
 
       - name: Run Pytest
