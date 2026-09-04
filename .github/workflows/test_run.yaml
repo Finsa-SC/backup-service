@@ -1,0 +1,27 @@
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  install-uv:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install UV & Setup UV
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install Project Dependencies
+        run: |
+          uv sync
+          uv pip install -e .
+
+      - name: Run Pytest
+        run: |
+          chmod +x test/test.sh
+          uv run ./test/test.sh
